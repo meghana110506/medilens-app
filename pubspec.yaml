@@ -20,7 +20,9 @@ dependencies:
   connectivity_plus: ^6.0.3
   lottie: ^3.1.0
   path: ^1.9.0
-  google_fonts: ^8.0.2
+  camera: ^0.10.6
+  google_mlkit_text_recognition: ^0.14.0
+  flutter_local_notifications: ^17.2.4
 
 dev_dependencies:
   flutter_test:

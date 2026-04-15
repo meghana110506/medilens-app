@@ -1,6 +1,7 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:medilens/core/theme.dart';
 import 'package:medilens/core/routes.dart';
 import 'package:medilens/core/lang_text.dart';
@@ -46,14 +47,10 @@ class _SosScreenState extends State<SosScreen>
       'ta': 'SOS\nஅனுப்பு'
     },
     'tip': {
-      'en':
-          'Tip: The floating 🆘 button is always visible on every screen — no need to navigate here in an emergency. Just tap it from anywhere.',
-      'te':
-          'చిట్కా: తేలుతున్న 🆘 బటన్ ప్రతి స్క్రీన్‌పై కనిపిస్తుంది — అత్యవసర పరిస్థితిలో ఇక్కడికి నావిగేట్ చేయాల్సిన అవసరం లేదు.',
-      'hi':
-          'सुझाव: फ्लोटिंग 🆘 बटन हर स्क्रीन पर दिखता है — आपातकाल में यहाँ आने की जरूरत नहीं।',
-      'ta':
-          'குறிப்பு: மிதக்கும் 🆘 பொத்தான் ஒவ்வொரு திரையிலும் தெரியும் — அவசரகாலத்தில் இங்கு வர வேண்டியதில்லை.'
+      'en': 'Tip: The floating 🆘 button is always visible on every screen.',
+      'te': 'చిట్కా: తేలుతున్న 🆘 బటన్ ప్రతి స్క్రీన్‌పై కనిపిస్తుంది.',
+      'hi': 'सुझाव: फ्लोटिंग 🆘 बटन हर स्क्रीन पर दिखता है।',
+      'ta': 'குறிப்பு: மிதக்கும் 🆘 பொத்தான் ஒவ்வொரு திரையிலும் தெரியும்.'
     },
     'caregiver': {
       'en': 'Registered Caregiver',
@@ -83,7 +80,12 @@ class _SosScreenState extends State<SosScreen>
     },
     'method': {'en': 'Method', 'te': 'పద్ధతి', 'hi': 'तरीका', 'ta': 'முறை'},
     'sms': {'en': 'SMS', 'te': 'SMS', 'hi': 'SMS', 'ta': 'SMS'},
-    'voice': {'en': 'Voice', 'te': 'వాయిస్', 'hi': 'आवाज़', 'ta': 'குரல்'},
+    'voice_label': {
+      'en': 'Voice',
+      'te': 'వాయిస్',
+      'hi': 'आवाज़',
+      'ta': 'குரல்'
+    },
     'manage': {
       'en': 'Manage Caregivers →',
       'te': 'సంరక్షకులను నిర్వహించండి →',
@@ -97,12 +99,11 @@ class _SosScreenState extends State<SosScreen>
       'ta': 'SOS அனுப்பப்பட்டது!'
     },
     'sent_sub': {
-      'en':
-          'SMS with GPS sent to Padma at +91 98765 11111. Voice alert played.',
+      'en': 'SMS sent to Padma at +91 98765 11111. Voice alert played.',
       'te':
-          'GPS తో SMS పద్మకు +91 98765 11111 కి పంపబడింది. వాయిస్ అలర్ట్ ప్లే అయింది.',
-      'hi': 'GPS के साथ SMS पद्मा को +91 98765 11111 पर भेजा गया।',
-      'ta': 'GPS உடன் SMS பத்மாவுக்கு +91 98765 11111 க்கு அனுப்பப்பட்டது.'
+          'SMS పద్మకు +91 98765 11111 కి పంపబడింది. వాయిస్ అలర్ట్ ప్లే అయింది.',
+      'hi': 'SMS पद्मा को +91 98765 11111 पर भेजा गया।',
+      'ta': 'SMS பத்மாவுக்கு +91 98765 11111 க்கு அனுப்பப்பட்டது.'
     },
     'sent_at': {
       'en': 'Sent at',
@@ -133,7 +134,7 @@ class _SosScreenState extends State<SosScreen>
     'nav_settings': {
       'en': 'Settings',
       'te': 'సెట్టింగులు',
-      'hi': 'सेटिंग्स',
+      'hi': 'सेटिंग्స',
       'ta': 'அமைப்புகள்'
     },
   };
@@ -157,15 +158,34 @@ class _SosScreenState extends State<SosScreen>
     super.dispose();
   }
 
-  void _sendSOS(String lang) {
-    setState(() => _sosSent = true);
-    context.read<LanguageProvider>().speak(lang == 'te'
+  Future<void> _sendSOS(String lang) async {
+    // Speak alert first
+    await context.read<LanguageProvider>().speak(lang == 'te'
         ? 'అత్యవసర సహాయం కోసం కాల్ చేస్తున్నాం'
         : lang == 'hi'
             ? 'आपातकालीन सहायता के लिए कॉल कर रहे हैं'
             : lang == 'ta'
                 ? 'அவசர உதவிக்கு அழைக்கிறோம்'
-                : 'Calling for emergency help');
+                : 'Sending emergency SOS alert');
+
+    // Open SMS app with pre-filled emergency message
+    final message = Uri.encodeComponent('EMERGENCY SOS from MediLens!\n'
+        'Patient: Lakshmi Devi needs immediate help.\n'
+        'Last medicine taken: Metformin 500mg.\n'
+        'Please call immediately!\n'
+        'Sent from MediLens Safety App.');
+
+    final smsUri = Uri.parse('sms:+919876511111?body=$message');
+
+    try {
+      if (await canLaunchUrl(smsUri)) {
+        await launchUrl(smsUri);
+      }
+    } catch (e) {
+      debugPrint('SMS launch error: $e');
+    }
+
+    setState(() => _sosSent = true);
   }
 
   @override
@@ -179,7 +199,6 @@ class _SosScreenState extends State<SosScreen>
           SafeArea(
             child: Column(
               children: [
-                // App bar
                 Padding(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -220,7 +239,6 @@ class _SosScreenState extends State<SosScreen>
                     padding: const EdgeInsets.fromLTRB(14, 4, 14, 100),
                     child: Column(
                       children: [
-                        // Description
                         LangText(_label('desc', lang), lang,
                             fontSize: 13,
                             color: AppTheme.grey,
@@ -233,7 +251,6 @@ class _SosScreenState extends State<SosScreen>
                           child: Stack(
                             alignment: Alignment.center,
                             children: [
-                              // Outer ring
                               AnimatedBuilder(
                                 animation: _pulseAnim,
                                 builder: (_, __) => Transform.scale(
@@ -251,7 +268,6 @@ class _SosScreenState extends State<SosScreen>
                                   ),
                                 ),
                               ),
-                              // Inner ring
                               AnimatedBuilder(
                                 animation: _pulseAnim,
                                 builder: (_, __) => Transform.scale(
@@ -269,7 +285,6 @@ class _SosScreenState extends State<SosScreen>
                                   ),
                                 ),
                               ),
-                              // Main button
                               GestureDetector(
                                 onTap: () => _sendSOS(lang),
                                 child: Container(
@@ -338,7 +353,7 @@ class _SosScreenState extends State<SosScreen>
                           ),
                         ),
                         const SizedBox(height: 16),
-                        // Caregiver section
+                        // Caregiver
                         Align(
                           alignment: Alignment.centerLeft,
                           child: LangText(_label('caregiver', lang), lang,
@@ -394,13 +409,16 @@ class _SosScreenState extends State<SosScreen>
                                   ],
                                 ),
                               ),
-                              const Icon(Icons.edit,
-                                  color: AppTheme.grey, size: 18),
+                              GestureDetector(
+                                onTap: () =>
+                                    context.go(AppRoutes.caregiverSetup),
+                                child: const Icon(Icons.edit,
+                                    color: AppTheme.grey, size: 18),
+                              ),
                             ],
                           ),
                         ),
                         const SizedBox(height: 16),
-                        // SOS Will Send section
                         Align(
                           alignment: Alignment.centerLeft,
                           child: LangText(_label('sos_sends', lang), lang,
@@ -422,7 +440,7 @@ class _SosScreenState extends State<SosScreen>
                             const SizedBox(width: 8),
                             _infoCard(
                                 '🔊',
-                                _label('voice', lang),
+                                _label('voice_label', lang),
                                 lang == 'te'
                                     ? 'Telugu'
                                     : lang == 'hi'
@@ -482,10 +500,7 @@ class _SosScreenState extends State<SosScreen>
           if (_sosSent)
             Positioned.fill(
               child: Container(
-                decoration: BoxDecoration(
-                  color: AppTheme.error.withValues(alpha: 0.95),
-                  borderRadius: BorderRadius.circular(0),
-                ),
+                color: AppTheme.error.withValues(alpha: 0.96),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
