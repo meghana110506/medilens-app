@@ -1,10 +1,10 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
-import '../../../core/theme.dart';
-import '../../../core/routes.dart';
-import '../../../providers/language_provider.dart';
+import 'package:medilens/core/theme.dart';
+import 'package:medilens/core/routes.dart';
+import 'package:medilens/core/lang_text.dart';
+import 'package:medilens/providers/language_provider.dart';
 
 class SosScreen extends StatefulWidget {
   const SosScreen({super.key});
@@ -15,69 +15,126 @@ class SosScreen extends StatefulWidget {
 
 class _SosScreenState extends State<SosScreen>
     with SingleTickerProviderStateMixin {
-  late AnimationController _pulseController;
-  late Animation<double> _pulseAnimation;
+  late AnimationController _pulseCtrl;
+  late Animation<double> _pulseAnim;
   bool _sosSent = false;
-
-  final List<Map<String, String>> _caregivers = [
-    {'name': 'Son - Ravi', 'phone': '+91 98765 43210', 'relation': 'Son'},
-    {
-      'name': 'Daughter - Priya',
-      'phone': '+91 87654 32109',
-      'relation': 'Daughter'
-    },
-  ];
 
   final Map<String, Map<String, String>> _labels = {
     'title': {
-      'en': 'Emergency SOS',
-      'te': 'అత్యవసర SOS',
-      'hi': 'आपातकालीन SOS',
-      'ta': 'அவசர SOS'
+      'en': '🆘 Emergency SOS',
+      'te': '🆘 అత్యవసర SOS',
+      'hi': '🆘 आपातकालीन SOS',
+      'ta': '🆘 அவசர SOS'
     },
-    'subtitle': {
-      'en': 'Emergency Help',
-      'te': 'అత్యవసర సహాయం',
-      'hi': 'आपातकालीन सहायता',
-      'ta': 'அவசர உதவி'
+    'sub': {
+      'en': 'SMS + GPS sent instantly to caregiver',
+      'te': 'SMS + GPS వెంటనే సంరక్షకుడికి పంపబడుతుంది',
+      'hi': 'SMS + GPS तुरंत देखभालकर्ता को भेजा जाता है',
+      'ta': 'SMS + GPS உடனடியாக பராமரிப்பாளருக்கு அனுப்பப்படுகிறது'
     },
-    'press': {
-      'en': 'Press to send emergency alert',
-      'te': 'అత్యవసర అలర్ట్ పంపడానికి నొక్కండి',
-      'hi': 'आपातकालीन अलर्ट भेजने के लिए दबाएं',
-      'ta': 'அவசர அலர்ட் அனுப்ப அழுத்துங்கள்'
+    'desc': {
+      'en': 'Press the button below to immediately alert your caregiver.',
+      'te': 'మీ సంరక్షకుడికి వెంటనే హెచ్చరించడానికి కింది బటన్ నొక్కండి.',
+      'hi': 'अपने देखभालकर्ता को तुरंत सचेत करने के लिए नीचे दिए बटन को दबाएं।',
+      'ta':
+          'உங்கள் பராமரிப்பாளருக்கு உடனடியாக எச்சரிக்க கீழே உள்ள பொத்தானை அழுத்துங்கள்.'
     },
-    'sent': {
-      'en': 'SOS sent to all caregivers!',
-      'te': 'సంరక్షకులందరికీ SOS పంపబడింది!',
-      'hi': 'सभी देखभालकर्ताओं को SOS भेजा गया!',
-      'ta': 'அனைத்து பராமரிப்பாளர்களுக்கும் SOS அனுப்பப்பட்டது!'
+    'send_sos': {
+      'en': 'SEND\nSOS',
+      'te': 'SOS\nపంపు',
+      'hi': 'SOS\nभेजें',
+      'ta': 'SOS\nஅனுப்பு'
     },
-    'emergency': {
-      'en': 'Emergency Services',
-      'te': 'అత్యవసర సేవలు',
-      'hi': 'आपातकालीन सेवाएं',
-      'ta': 'அவசர சேவைகள்'
+    'tip': {
+      'en':
+          'Tip: The floating 🆘 button is always visible on every screen — no need to navigate here in an emergency. Just tap it from anywhere.',
+      'te':
+          'చిట్కా: తేలుతున్న 🆘 బటన్ ప్రతి స్క్రీన్‌పై కనిపిస్తుంది — అత్యవసర పరిస్థితిలో ఇక్కడికి నావిగేట్ చేయాల్సిన అవసరం లేదు.',
+      'hi':
+          'सुझाव: फ्लोटिंग 🆘 बटन हर स्क्रीन पर दिखता है — आपातकाल में यहाँ आने की जरूरत नहीं।',
+      'ta':
+          'குறிப்பு: மிதக்கும் 🆘 பொத்தான் ஒவ்வொரு திரையிலும் தெரியும் — அவசரகாலத்தில் இங்கு வர வேண்டியதில்லை.'
     },
-    'call': {
-      'en': 'Call 112',
-      'te': '112 కి కాల్ చేయండి',
-      'hi': '112 पर कॉल करें',
-      'ta': '112 அழைக்கவும்'
+    'caregiver': {
+      'en': 'Registered Caregiver',
+      'te': 'నమోదిత సంరక్షకుడు',
+      'hi': 'पंजीकृत देखभालकर्ता',
+      'ta': 'பதிவுசெய்த பராமரிப்பாளர்'
     },
-    'caregivers': {
-      'en': 'Caregivers',
-      'te': 'సంరక్షకులు',
-      'hi': 'देखभालकर्ता',
-      'ta': 'பராமரிப்பாளர்கள்'
+    'primary': {
+      'en': 'Primary Caregiver',
+      'te': 'ప్రాథమిక సంరక్షకుడు',
+      'hi': 'प्राथमिक देखभालकर्ता',
+      'ta': 'முதன்மை பராமரிப்பாளர்'
     },
-    'reset': {'en': 'Reset', 'te': 'రీసెట్', 'hi': 'रीसेट', 'ta': 'மீட்டமை'},
-    'sos': {'en': 'SOS', 'te': 'అత్యవసరం', 'hi': 'आपातकाल', 'ta': 'அவசரம்'},
-    'sent_short': {
-      'en': 'SENT!',
-      'te': 'పంపబడింది!',
-      'hi': 'भेजा!',
-      'ta': 'அனுப்பப்பட்டது!'
+    'sos_sends': {
+      'en': 'SOS Will Send',
+      'te': 'SOS పంపుతుంది',
+      'hi': 'SOS भेजेगा',
+      'ta': 'SOS அனுப்பும்'
+    },
+    'location': {'en': 'Location', 'te': 'స్థానం', 'hi': 'स्थान', 'ta': 'இடம்'},
+    'gps': {'en': 'GPS', 'te': 'GPS', 'hi': 'GPS', 'ta': 'GPS'},
+    'last_scan': {
+      'en': 'Last Scan',
+      'te': 'చివరి స్కాన్',
+      'hi': 'अंतिम स्कैन',
+      'ta': 'கடைசி ஸ்கேன்'
+    },
+    'method': {'en': 'Method', 'te': 'పద్ధతి', 'hi': 'तरीका', 'ta': 'முறை'},
+    'sms': {'en': 'SMS', 'te': 'SMS', 'hi': 'SMS', 'ta': 'SMS'},
+    'voice': {'en': 'Voice', 'te': 'వాయిస్', 'hi': 'आवाज़', 'ta': 'குரல்'},
+    'manage': {
+      'en': 'Manage Caregivers →',
+      'te': 'సంరక్షకులను నిర్వహించండి →',
+      'hi': 'देखभालकर्ताओं को प्रबंधित करें →',
+      'ta': 'பராமரிப்பாளர்களை நிர்வகிக்கவும் →'
+    },
+    'sent_title': {
+      'en': 'SOS Sent!',
+      'te': 'SOS పంపబడింది!',
+      'hi': 'SOS भेजा गया!',
+      'ta': 'SOS அனுப்பப்பட்டது!'
+    },
+    'sent_sub': {
+      'en':
+          'SMS with GPS sent to Padma at +91 98765 11111. Voice alert played.',
+      'te':
+          'GPS తో SMS పద్మకు +91 98765 11111 కి పంపబడింది. వాయిస్ అలర్ట్ ప్లే అయింది.',
+      'hi': 'GPS के साथ SMS पद्मा को +91 98765 11111 पर भेजा गया।',
+      'ta': 'GPS உடன் SMS பத்மாவுக்கு +91 98765 11111 க்கு அனுப்பப்பட்டது.'
+    },
+    'sent_at': {
+      'en': 'Sent at',
+      'te': 'పంపిన సమయం',
+      'hi': 'भेजा गया',
+      'ta': 'அனுப்பிய நேரம்'
+    },
+    'dismiss': {
+      'en': 'Dismiss',
+      'te': 'తొలగించు',
+      'hi': 'खारिज करें',
+      'ta': 'நிராகரி'
+    },
+    'nav_home': {'en': 'Home', 'te': 'హోమ్', 'hi': 'होम', 'ta': 'முகப்பு'},
+    'nav_scan': {'en': 'Scan', 'te': 'స్కాన్', 'hi': 'स्कैन', 'ta': 'ஸ்கேன்'},
+    'nav_cabinet': {
+      'en': 'Cabinet',
+      'te': 'పెట్టె',
+      'hi': 'कैबिनेट',
+      'ta': 'பெட்டி'
+    },
+    'nav_reminders': {
+      'en': 'Reminders',
+      'te': 'రిమైండర్లు',
+      'hi': 'रिमाइंडर',
+      'ta': 'நினைவூட்டல்'
+    },
+    'nav_settings': {
+      'en': 'Settings',
+      'te': 'సెట్టింగులు',
+      'hi': 'सेटिंग्स',
+      'ta': 'அமைப்புகள்'
     },
   };
 
@@ -87,235 +144,451 @@ class _SosScreenState extends State<SosScreen>
   @override
   void initState() {
     super.initState();
-    _pulseController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 1),
-    )..repeat(reverse: true);
-    _pulseAnimation = Tween<double>(begin: 0.95, end: 1.05).animate(
-      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
-    );
+    _pulseCtrl = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 1200))
+      ..repeat(reverse: true);
+    _pulseAnim = Tween<double>(begin: 0.92, end: 1.08)
+        .animate(CurvedAnimation(parent: _pulseCtrl, curve: Curves.easeInOut));
   }
 
   @override
   void dispose() {
-    _pulseController.dispose();
+    _pulseCtrl.dispose();
     super.dispose();
   }
 
-  Future<void> _sendSOS() async {
+  void _sendSOS(String lang) {
     setState(() => _sosSent = true);
-    final provider = context.read<LanguageProvider>();
-    final lang = provider.language;
-    final Map<String, String> sosMessages = {
-      'en':
-          'Emergency SOS sent. Your caregivers have been notified. Help is on the way.',
-      'te':
-          'అత్యవసర SOS పంపబడింది. మీ సంరక్షకులకు సందేశం వెళ్ళింది. సహాయం వస్తోంది.',
-      'hi':
-          'आपातकालीन SOS भेजा गया। आपके देखभालकर्ताओं को सूचित किया गया है। मदद आ रही है।',
-      'ta':
-          'அவசர SOS அனுப்பப்பட்டது. உங்கள் பராமரிப்பாளர்களுக்கு தெரிவிக்கப்பட்டது. உதவி வருகிறது.',
-    };
-    await provider.speak(sosMessages[lang] ?? sosMessages['en']!);
-  }
-
-  Future<void> _callEmergency() async {
-    final uri = Uri.parse('tel:112');
-    if (await canLaunchUrl(uri)) await launchUrl(uri);
-  }
-
-  Future<void> _callCaregiver(String phone) async {
-    final cleanPhone = phone.replaceAll(' ', '').replaceAll('-', '');
-    final uri = Uri.parse('tel:$cleanPhone');
-    if (await canLaunchUrl(uri)) await launchUrl(uri);
+    context.read<LanguageProvider>().speak(lang == 'te'
+        ? 'అత్యవసర సహాయం కోసం కాల్ చేస్తున్నాం'
+        : lang == 'hi'
+            ? 'आपातकालीन सहायता के लिए कॉल कर रहे हैं'
+            : lang == 'ta'
+                ? 'அவசர உதவிக்கு அழைக்கிறோம்'
+                : 'Calling for emergency help');
   }
 
   @override
   Widget build(BuildContext context) {
     final lang = context.watch<LanguageProvider>().language;
-
+    final font = LanguageProvider.getFontFamily(lang);
     return Scaffold(
       backgroundColor: AppTheme.background,
-      appBar: AppBar(
-        backgroundColor: AppTheme.background,
-        title: Text(_label('title', lang)),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppTheme.white),
-          onPressed: () => context.go(AppRoutes.home),
-        ),
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            children: [
-              Text(_label('subtitle', lang),
-                  style: const TextStyle(fontSize: 14, color: AppTheme.error)),
-              const SizedBox(height: 4),
-              Text(_label('title', lang),
-                  style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: AppTheme.white)),
-              const SizedBox(height: 40),
-
-              // SOS Button
-              ScaleTransition(
-                scale: _pulseAnimation,
-                child: GestureDetector(
-                  onTap: _sosSent ? null : _sendSOS,
-                  child: Container(
-                    width: 200,
-                    height: 200,
-                    decoration: BoxDecoration(
-                      color: _sosSent ? AppTheme.success : AppTheme.error,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: (_sosSent ? AppTheme.success : AppTheme.error)
-                              .withOpacity(0.5),
-                          blurRadius: 40,
-                          spreadRadius: 10,
-                        )
-                      ],
-                    ),
+      body: Stack(
+        children: [
+          SafeArea(
+            child: Column(
+              children: [
+                // App bar
+                Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  child: Row(
+                    children: [
+                      GestureDetector(
+                        onTap: () => context.go(AppRoutes.home),
+                        child: Container(
+                          width: 30,
+                          height: 30,
+                          decoration: BoxDecoration(
+                            color: AppTheme.card,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(Icons.arrow_back,
+                              color: AppTheme.white, size: 18),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            LangText(_label('title', lang), lang,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: AppTheme.error),
+                            LangText(_label('sub', lang), lang,
+                                fontSize: 11, color: AppTheme.grey),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(14, 4, 14, 100),
                     child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(_sosSent ? Icons.check_circle : Icons.sos,
-                            color: Colors.white, size: 72),
+                        // Description
+                        LangText(_label('desc', lang), lang,
+                            fontSize: 13,
+                            color: AppTheme.grey,
+                            textAlign: TextAlign.center),
+                        const SizedBox(height: 20),
+                        // SOS Button with pulse rings
+                        SizedBox(
+                          width: 140,
+                          height: 140,
+                          child: Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              // Outer ring
+                              AnimatedBuilder(
+                                animation: _pulseAnim,
+                                builder: (_, __) => Transform.scale(
+                                  scale: _pulseAnim.value,
+                                  child: Container(
+                                    width: 130,
+                                    height: 130,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                          color: AppTheme.error
+                                              .withValues(alpha: 0.25),
+                                          width: 2),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              // Inner ring
+                              AnimatedBuilder(
+                                animation: _pulseAnim,
+                                builder: (_, __) => Transform.scale(
+                                  scale: _pulseAnim.value * 0.85,
+                                  child: Container(
+                                    width: 110,
+                                    height: 110,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                          color: AppTheme.error
+                                              .withValues(alpha: 0.2),
+                                          width: 2),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              // Main button
+                              GestureDetector(
+                                onTap: () => _sendSOS(lang),
+                                child: Container(
+                                  width: 86,
+                                  height: 86,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    gradient: const LinearGradient(
+                                      colors: [
+                                        Color(0xFFDC2626),
+                                        Color(0xFFEF4444)
+                                      ],
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                          color: AppTheme.error
+                                              .withValues(alpha: 0.5),
+                                          blurRadius: 20,
+                                          spreadRadius: 4),
+                                    ],
+                                  ),
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      const Text('🆘',
+                                          style: TextStyle(fontSize: 22)),
+                                      const SizedBox(height: 2),
+                                      Text(_label('send_sos', lang),
+                                          textAlign: TextAlign.center,
+                                          style: TextStyle(
+                                            fontFamily: font,
+                                            color: AppTheme.white,
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w800,
+                                            height: 1.2,
+                                          )),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        // Tip box
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: AppTheme.error.withValues(alpha: 0.07),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                                color: AppTheme.error.withValues(alpha: 0.2)),
+                          ),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('💡', style: TextStyle(fontSize: 16)),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: LangText(_label('tip', lang), lang,
+                                    fontSize: 12, color: AppTheme.grey),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        // Caregiver section
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: LangText(_label('caregiver', lang), lang,
+                              fontSize: 11,
+                              color: AppTheme.grey,
+                              fontWeight: FontWeight.w600),
+                        ),
                         const SizedBox(height: 8),
-                        Text(
-                            _sosSent
-                                ? _label('sent_short', lang)
-                                : _label('sos', lang),
-                            style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 28,
-                                fontWeight: FontWeight.bold)),
+                        Container(
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: AppTheme.card,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                                color: AppTheme.grey.withValues(alpha: 0.15)),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 36,
+                                height: 36,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  gradient: const LinearGradient(colors: [
+                                    Color(0xFF7C3AED),
+                                    Color(0xFFA855F7)
+                                  ]),
+                                ),
+                                child: const Center(
+                                  child: Text('P',
+                                      style: TextStyle(
+                                          color: AppTheme.white,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 16)),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text('Padma (Daughter)',
+                                        style: TextStyle(
+                                            color: AppTheme.white,
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 14)),
+                                    LangText(_label('primary', lang), lang,
+                                        fontSize: 11, color: AppTheme.grey),
+                                    const Text('+91 98765 11111',
+                                        style: TextStyle(
+                                            color: AppTheme.accent,
+                                            fontSize: 12)),
+                                  ],
+                                ),
+                              ),
+                              const Icon(Icons.edit,
+                                  color: AppTheme.grey, size: 18),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        // SOS Will Send section
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: LangText(_label('sos_sends', lang), lang,
+                              fontSize: 11,
+                              color: AppTheme.grey,
+                              fontWeight: FontWeight.w600),
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            _infoCard('📍', _label('location', lang),
+                                _label('gps', lang), lang),
+                            const SizedBox(width: 8),
+                            _infoCard('💊', _label('last_scan', lang),
+                                'Metformin', lang),
+                            const SizedBox(width: 8),
+                            _infoCard('📱', _label('method', lang),
+                                _label('sms', lang), lang),
+                            const SizedBox(width: 8),
+                            _infoCard(
+                                '🔊',
+                                _label('voice', lang),
+                                lang == 'te'
+                                    ? 'Telugu'
+                                    : lang == 'hi'
+                                        ? 'Hindi'
+                                        : lang == 'ta'
+                                            ? 'Tamil'
+                                            : 'English',
+                                lang),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        GestureDetector(
+                          onTap: () => context.go(AppRoutes.caregiverSetup),
+                          child: Center(
+                            child: LangText(_label('manage', lang), lang,
+                                fontSize: 13, color: AppTheme.accent),
+                          ),
+                        ),
                       ],
                     ),
                   ),
                 ),
+              ],
+            ),
+          ),
+          // Bottom nav
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              height: 70,
+              decoration: BoxDecoration(
+                color: AppTheme.card,
+                border: Border(
+                    top: BorderSide(
+                        color: AppTheme.grey.withValues(alpha: 0.2))),
               ),
-              const SizedBox(height: 16),
-              Text(
-                _sosSent ? _label('sent', lang) : _label('press', lang),
-                style: TextStyle(
-                    color: _sosSent ? AppTheme.success : AppTheme.grey,
-                    fontSize: 14),
-                textAlign: TextAlign.center,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _navItem(Icons.home, _label('nav_home', lang), false,
+                      () => context.go(AppRoutes.home), font),
+                  _navItem(Icons.qr_code_scanner, _label('nav_scan', lang),
+                      false, () => context.go(AppRoutes.scan), font),
+                  _navItem(Icons.medical_services, _label('nav_cabinet', lang),
+                      false, () => context.go(AppRoutes.cabinet), font),
+                  _navItem(Icons.alarm, _label('nav_reminders', lang), false,
+                      () => context.go(AppRoutes.reminders), font),
+                  _navItem(Icons.settings, _label('nav_settings', lang), false,
+                      () => context.go(AppRoutes.settings), font),
+                ],
               ),
-              const SizedBox(height: 40),
-
-              // Emergency Call
-              Container(
-                padding: const EdgeInsets.all(16),
+            ),
+          ),
+          // SOS Sent overlay
+          if (_sosSent)
+            Positioned.fill(
+              child: Container(
                 decoration: BoxDecoration(
-                  color: AppTheme.error.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppTheme.error.withOpacity(0.3)),
+                  color: AppTheme.error.withValues(alpha: 0.95),
+                  borderRadius: BorderRadius.circular(0),
                 ),
-                child: Row(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.local_hospital,
-                        color: AppTheme.error, size: 32),
-                    const SizedBox(width: 16),
-                    Expanded(
+                    const Text('🆘', style: TextStyle(fontSize: 60)),
+                    const SizedBox(height: 16),
+                    LangText(_label('sent_title', lang), lang,
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        textAlign: TextAlign.center),
+                    const SizedBox(height: 12),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 32),
+                      child: LangText(_label('sent_sub', lang), lang,
+                          fontSize: 14,
+                          color: Colors.white70,
+                          textAlign: TextAlign.center),
+                    ),
+                    const SizedBox(height: 20),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 24, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(_label('emergency', lang),
+                          LangText(_label('sent_at', lang), lang,
+                              fontSize: 12, color: Colors.white70),
+                          const SizedBox(height: 4),
+                          Text(TimeOfDay.now().format(context),
                               style: const TextStyle(
                                   color: AppTheme.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16)),
-                          const Text('112',
-                              style: TextStyle(
-                                  color: AppTheme.grey, fontSize: 13)),
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold)),
                         ],
                       ),
                     ),
-                    ElevatedButton(
-                      onPressed: _callEmergency,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.error,
-                        minimumSize: const Size(80, 44),
+                    const SizedBox(height: 24),
+                    GestureDetector(
+                      onTap: () => setState(() => _sosSent = false),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 24, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: LangText(_label('dismiss', lang), lang,
+                            fontSize: 15, fontWeight: FontWeight.w600),
                       ),
-                      child: Text(_label('call', lang)),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 24),
+            ),
+        ],
+      ),
+    );
+  }
 
-              // Caregivers
-              Align(
-                alignment: Alignment.centerLeft,
-                child: Text(_label('caregivers', lang),
-                    style: const TextStyle(
-                        color: AppTheme.grey,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500)),
-              ),
-              const SizedBox(height: 12),
-              ..._caregivers.map((c) => Container(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                        color: AppTheme.card,
-                        borderRadius: BorderRadius.circular(16)),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 48,
-                          height: 48,
-                          decoration: BoxDecoration(
-                              color: AppTheme.accent.withOpacity(0.15),
-                              shape: BoxShape.circle),
-                          child:
-                              const Icon(Icons.person, color: AppTheme.accent),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(c['name']!,
-                                  style: const TextStyle(
-                                      color: AppTheme.white,
-                                      fontWeight: FontWeight.w600)),
-                              Text(c['phone']!,
-                                  style: const TextStyle(
-                                      color: AppTheme.grey, fontSize: 13)),
-                            ],
-                          ),
-                        ),
-                        IconButton(
-                          onPressed: () => _callCaregiver(c['phone']!),
-                          icon: Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: AppTheme.success.withOpacity(0.15),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: const Icon(Icons.call,
-                                color: AppTheme.success, size: 20),
-                          ),
-                        ),
-                      ],
-                    ),
-                  )),
+  Widget _infoCard(String emoji, String label, String value, String lang) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        decoration: BoxDecoration(
+          color: AppTheme.card,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: AppTheme.grey.withValues(alpha: 0.15)),
+        ),
+        child: Column(
+          children: [
+            Text(emoji, style: const TextStyle(fontSize: 18)),
+            const SizedBox(height: 4),
+            LangText(label, lang, fontSize: 10, color: AppTheme.grey),
+            const SizedBox(height: 2),
+            LangText(value, lang, fontSize: 11, fontWeight: FontWeight.w600),
+          ],
+        ),
+      ),
+    );
+  }
 
-              if (_sosSent)
-                TextButton.icon(
-                  onPressed: () => setState(() => _sosSent = false),
-                  icon: const Icon(Icons.refresh, color: AppTheme.grey),
-                  label: Text(_label('reset', lang),
-                      style: const TextStyle(color: AppTheme.grey)),
-                ),
-            ],
-          ),
+  Widget _navItem(IconData icon, String label, bool isActive,
+      VoidCallback onTap, String font) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon,
+                color: isActive ? AppTheme.accent : AppTheme.grey, size: 26),
+            const SizedBox(height: 4),
+            Text(label,
+                style: TextStyle(
+                  fontFamily: font,
+                  color: isActive ? AppTheme.accent : AppTheme.grey,
+                  fontSize: 11,
+                  fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+                )),
+          ],
         ),
       ),
     );

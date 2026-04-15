@@ -1,9 +1,9 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../core/constants.dart';
-import '../../core/routes.dart';
-import '../../core/theme.dart';
+import 'package:medilens/core/constants.dart';
+import 'package:medilens/core/routes.dart';
+import 'package:medilens/core/theme.dart';
 
 class SetupScreen extends StatefulWidget {
   const SetupScreen({super.key});
@@ -13,7 +13,6 @@ class SetupScreen extends StatefulWidget {
 }
 
 class _SetupScreenState extends State<SetupScreen> {
-  final bool _isLoading = true;
   String _status = 'Starting MediLens...';
 
   @override
@@ -58,9 +57,10 @@ class _SetupScreenState extends State<SetupScreen> {
                 borderRadius: BorderRadius.circular(30),
                 boxShadow: [
                   BoxShadow(
-                      color: AppTheme.accent.withOpacity(0.3),
-                      blurRadius: 30,
-                      spreadRadius: 5)
+                    color: AppTheme.accent.withValues(alpha: 0.3),
+                    blurRadius: 30,
+                    spreadRadius: 5,
+                  )
                 ],
               ),
               child: const Icon(Icons.medication,
@@ -84,7 +84,7 @@ class _SetupScreenState extends State<SetupScreen> {
             const SizedBox(height: 60),
             const Text('For Elderly & Visually Impaired',
                 style: TextStyle(fontSize: 12, color: AppTheme.grey)),
-            const Text('వృద్ధులు & దృష్టి లోపం ఉన్నవారికి',
+            const Text('वृद्धों और दृष्टिहीनों के लिए • பார்வையற்றவர்களுக்காக',
                 style: TextStyle(fontSize: 12, color: AppTheme.grey)),
           ],
         ),
@@ -92,3 +92,5 @@ class _SetupScreenState extends State<SetupScreen> {
     );
   }
 }
+
+

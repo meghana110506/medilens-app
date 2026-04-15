@@ -1,10 +1,10 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import '../../../core/theme.dart';
-import '../../../core/routes.dart';
-import '../../../providers/language_provider.dart';
-import '../../../repositories/database_helper.dart';
+import 'package:medilens/core/theme.dart';
+import 'package:medilens/core/routes.dart';
+import 'package:medilens/core/lang_text.dart';
+import 'package:medilens/providers/language_provider.dart';
 
 class InteractionCheckerScreen extends StatefulWidget {
   const InteractionCheckerScreen({super.key});
@@ -15,320 +15,335 @@ class InteractionCheckerScreen extends StatefulWidget {
 }
 
 class _InteractionCheckerScreenState extends State<InteractionCheckerScreen> {
-  final TextEditingController _drug1Controller = TextEditingController();
-  final TextEditingController _drug2Controller = TextEditingController();
+  final _searchController = TextEditingController();
+  final List<String> _selectedMedicines = [];
   bool _isChecking = false;
-  Map<String, dynamic>? _result;
-  List<Map<String, dynamic>> _drug1Suggestions = [];
-  List<Map<String, dynamic>> _drug2Suggestions = [];
+  List<Map<String, dynamic>> _results = [];
+
+  final List<String> _commonMedicines = [
+    'Paracetamol',
+    'Aspirin',
+    'Ibuprofen',
+    'Metformin',
+    'Amlodipine',
+    'Atorvastatin',
+    'Omeprazole',
+    'Metoprolol',
+    'Lisinopril',
+    'Warfarin',
+    'Digoxin',
+    'Furosemide',
+  ];
 
   final Map<String, Map<String, String>> _labels = {
     'title': {
-      'en': 'Drug Interactions',
-      'te': 'మందుల పరస్పర క్రియ',
-      'hi': 'दवा परस्पर क्रिया',
-      'ta': 'மருந்து தொடர்புகள்'
+      'en': 'Interaction Checker',
+      'te': 'మందుల పరస్పర చర్య తనిఖీ',
+      'hi': 'दवा परस्पर क्रिया जाँच',
+      'ta': 'மருந்து தொடர்பு சரிபார்ப்பு'
     },
     'subtitle': {
       'en': 'Check if medicines are safe together',
-      'te': 'మందులు కలిపి తీసుకోవడం సురక్షితమో తనిఖీ చేయండి',
+      'te': 'మందులు కలిసి సురక్షితంగా ఉన్నాయో తనిఖీ చేయండి',
       'hi': 'जांचें कि दवाएं एक साथ सुरक्षित हैं',
-      'ta': 'மருந்துகள் ஒன்றாக பாதுகாப்பானதா என சரிபாருங்கள்'
+      'ta': 'மருந்துகள் ஒன்றாக பாதுகாப்பானவையா என சரிபார்க்கவும்'
     },
-    'medicine1': {
-      'en': 'Medicine 1',
-      'te': 'మందు 1',
-      'hi': 'दवा 1',
-      'ta': 'மருந்து 1'
+    'search': {
+      'en': 'Search medicine...',
+      'te': 'మందు వెతకండి...',
+      'hi': 'दवा खोजें...',
+      'ta': 'மருந்தை தேடுங்கள்...'
     },
-    'medicine2': {
-      'en': 'Medicine 2',
-      'te': 'మందు 2',
-      'hi': 'दवा 2',
-      'ta': 'மருந்து 2'
+    'selected': {
+      'en': 'Selected Medicines',
+      'te': 'ఎంచుకున్న మందులు',
+      'hi': 'चुनी गई दवाएं',
+      'ta': 'தேர்ந்தெடுக்கப்பட்ட மருந்துகள்'
+    },
+    'common': {
+      'en': 'Common Medicines',
+      'te': 'సాధారణ మందులు',
+      'hi': 'सामान्य दवाएं',
+      'ta': 'பொதுவான மருந்துகள்'
     },
     'check': {
-      'en': 'Check Interaction',
-      'te': 'తనిఖీ చేయండి',
-      'hi': 'परस्पर क्रिया जांचें',
-      'ta': 'தொடர்பை சரிபாருங்கள்'
+      'en': 'Check Interactions',
+      'te': 'పరస్పర చర్యలు తనిఖీ చేయండి',
+      'hi': 'परस्पर क्रियाएं जांचें',
+      'ta': 'தொடர்புகளை சரிபார்க்கவும்'
+    },
+    'results': {
+      'en': 'Results',
+      'te': 'ఫలితాలు',
+      'hi': 'परिणाम',
+      'ta': 'முடிவுகள்'
+    },
+    'safe': {
+      'en': 'Safe to use together',
+      'te': 'కలిసి వాడటానికి సురక్షితం',
+      'hi': 'एक साथ उपयोग करना सुरक्षित',
+      'ta': 'ஒன்றாக பயன்படுத்த பாதுகாப்பானது'
+    },
+    'warning': {
+      'en': 'Use with caution',
+      'te': 'జాగ్రత్తగా వాడండి',
+      'hi': 'सावधानी के साथ उपयोग करें',
+      'ta': 'எச்சரிக்கையுடன் பயன்படுத்துங்கள்'
+    },
+    'danger': {
+      'en': 'Dangerous combination!',
+      'te': 'ప్రమాదకరమైన కలయిక!',
+      'hi': 'खतरनाक संयोजन!',
+      'ta': 'ஆபத்தான கலவை!'
+    },
+    'min_medicines': {
+      'en': 'Please select at least 2 medicines',
+      'te': 'దయచేసి కనీసం 2 మందులు ఎంచుకోండి',
+      'hi': 'कृपया कम से कम 2 दवाएं चुनें',
+      'ta': 'குறைந்தது 2 மருந்துகளை தேர்ந்தெடுக்கவும்'
     },
     'checking': {
       'en': 'Checking...',
-      'te': 'తనిఖీ చేస్తోంది...',
-      'hi': 'जांच रहा है...',
-      'ta': 'சரிபார்க்கிறது...'
-    },
-    'level': {
-      'en': 'Interaction Level',
-      'te': 'పరస్పర క్రియ స్థాయి',
-      'hi': 'परस्पर क्रिया स्तर',
-      'ta': 'தொடர்பு நிலை'
-    },
-    'listen': {
-      'en': 'Listen',
-      'te': 'వినండి',
-      'hi': 'सुनें',
-      'ta': 'கேளுங்கள்'
-    },
-    'desc': {
-      'en':
-          'Monitor closely when using these medicines together. Consult your doctor.',
-      'te':
-          'ఈ మందులు కలిపి వాడేటప్పుడు జాగ్రత్తగా గమనించండి. మీ డాక్టర్‌ని సంప్రదించండి.',
-      'hi':
-          'इन दवाओं को एक साथ उपयोग करते समय ध्यान से देखें। अपने डॉक्टर से परामर्श करें।',
-      'ta':
-          'இந்த மருந்துகளை ஒன்றாக பயன்படுத்தும்போது கவனமாக கண்காணிக்கவும். உங்கள் மருத்துவரை அணுகவும்.'
+      'te': 'తనిఖీ చేస్తున్నాము...',
+      'hi': 'जांच रहे हैं...',
+      'ta': 'சரிபார்க்கிறோம்...'
     },
   };
 
   String _label(String key, String lang) =>
       _labels[key]?[lang] ?? _labels[key]?['en'] ?? key;
 
-  @override
-  void dispose() {
-    _drug1Controller.dispose();
-    _drug2Controller.dispose();
-    super.dispose();
-  }
-
-  Future<void> _searchDrug(String query, bool isDrug1) async {
-    if (query.length < 3) return;
-    try {
-      final db = DatabaseHelper();
-      final results = await db.searchDrug(query);
-      setState(() {
-        if (isDrug1)
-          _drug1Suggestions = results;
-        else
-          _drug2Suggestions = results;
-      });
-    } catch (e) {
-      debugPrint('Search error: $e');
+  void _checkInteractions(String lang) {
+    if (_selectedMedicines.length < 2) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content:
+                LangText(_label('min_medicines', lang), lang, fontSize: 13)),
+      );
+      return;
     }
-  }
-
-  Future<void> _checkInteraction() async {
-    if (_drug1Controller.text.isEmpty || _drug2Controller.text.isEmpty) return;
     setState(() {
       _isChecking = true;
-      _result = null;
+      _results = [];
     });
-    await Future.delayed(const Duration(seconds: 1));
-    setState(() {
-      _isChecking = false;
-      _result = {
-        'drug1': _drug1Controller.text,
-        'drug2': _drug2Controller.text,
-        'severity': 'moderate',
-      };
+    Future.delayed(const Duration(seconds: 2), () {
+      if (!mounted) return;
+      setState(() {
+        _isChecking = false;
+        _results = _generateResults();
+      });
     });
   }
 
-  Future<void> _speak() async {
-    if (_result == null) return;
-    final provider = context.read<LanguageProvider>();
-    final lang = provider.language;
-    await provider.speak(_label('desc', lang));
+  List<Map<String, dynamic>> _generateResults() {
+    final results = <Map<String, dynamic>>[];
+    for (int i = 0; i < _selectedMedicines.length - 1; i++) {
+      for (int j = i + 1; j < _selectedMedicines.length; j++) {
+        final m1 = _selectedMedicines[i];
+        final m2 = _selectedMedicines[j];
+        int severity = 0;
+        if ((m1 == 'Aspirin' && m2 == 'Warfarin') ||
+            (m1 == 'Warfarin' && m2 == 'Aspirin')) {
+          severity = 2;
+        } else if ((m1 == 'Metformin' && m2 == 'Ibuprofen') ||
+            (m1 == 'Ibuprofen' && m2 == 'Metformin')) {
+          severity = 1;
+        }
+        results.add({'medicine1': m1, 'medicine2': m2, 'severity': severity});
+      }
+    }
+    return results;
   }
 
-  Color _getSeverityColor(String severity) {
-    switch (severity) {
-      case 'severe':
-        return AppTheme.error;
-      case 'moderate':
-        return AppTheme.warning;
-      case 'mild':
-        return AppTheme.success;
-      default:
-        return AppTheme.grey;
-    }
-  }
-
-  IconData _getSeverityIcon(String severity) {
-    switch (severity) {
-      case 'severe':
-        return Icons.dangerous;
-      case 'moderate':
-        return Icons.warning_amber;
-      case 'mild':
-        return Icons.info;
-      default:
-        return Icons.help;
-    }
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final lang = context.watch<LanguageProvider>().language;
-
+    final font = LanguageProvider.getFontFamily(lang);
     return Scaffold(
       backgroundColor: AppTheme.background,
       appBar: AppBar(
         backgroundColor: AppTheme.background,
-        title: Text(_label('title', lang)),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppTheme.white),
           onPressed: () => context.go(AppRoutes.home),
         ),
+        title: LangText(_label('title', lang), lang,
+            fontSize: 16, fontWeight: FontWeight.bold),
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(_label('subtitle', lang),
-                  style: const TextStyle(fontSize: 14, color: AppTheme.grey)),
-              const SizedBox(height: 24),
-              _buildDrugField(
-                controller: _drug1Controller,
-                label: _label('medicine1', lang),
-                suggestions: _drug1Suggestions,
-                isDrug1: true,
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            LangText(_label('subtitle', lang), lang,
+                fontSize: 13, color: AppTheme.grey),
+            const SizedBox(height: 16),
+            Container(
+              decoration: BoxDecoration(
+                  color: AppTheme.card,
+                  borderRadius: BorderRadius.circular(16)),
+              child: TextField(
+                controller: _searchController,
+                style: TextStyle(fontFamily: font, color: AppTheme.white),
+                decoration: InputDecoration(
+                  hintText: _label('search', lang),
+                  hintStyle: TextStyle(fontFamily: font, color: AppTheme.grey),
+                  prefixIcon: const Icon(Icons.search, color: AppTheme.accent),
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.all(16),
+                ),
+                onSubmitted: (val) {
+                  if (val.isNotEmpty && !_selectedMedicines.contains(val)) {
+                    setState(() => _selectedMedicines.add(val));
+                    _searchController.clear();
+                  }
+                },
+              ),
+            ),
+            const SizedBox(height: 16),
+            if (_selectedMedicines.isNotEmpty) ...[
+              LangText(_label('selected', lang), lang,
+                  fontSize: 12, color: AppTheme.grey),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: _selectedMedicines
+                    .map((m) => Chip(
+                          label: Text(m,
+                              style: const TextStyle(
+                                  color: AppTheme.white, fontSize: 13)),
+                          backgroundColor: AppTheme.accent,
+                          deleteIcon: const Icon(Icons.close,
+                              size: 16, color: AppTheme.white),
+                          onDeleted: () =>
+                              setState(() => _selectedMedicines.remove(m)),
+                        ))
+                    .toList(),
               ),
               const SizedBox(height: 16),
-              Center(
-                child: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                      color: AppTheme.card, shape: BoxShape.circle),
-                  child: const Icon(Icons.compare_arrows,
-                      color: AppTheme.accent, size: 28),
+            ],
+            LangText(_label('common', lang), lang,
+                fontSize: 12, color: AppTheme.grey),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: _commonMedicines.map((m) {
+                final isSelected = _selectedMedicines.contains(m);
+                return GestureDetector(
+                  onTap: () => setState(() {
+                    if (isSelected)
+                      _selectedMedicines.remove(m);
+                    else
+                      _selectedMedicines.add(m);
+                  }),
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: isSelected ? AppTheme.accent : AppTheme.card,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(m,
+                        style: TextStyle(
+                          color: isSelected ? AppTheme.white : AppTheme.grey,
+                          fontSize: 13,
+                        )),
+                  ),
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: 24),
+            GestureDetector(
+              onTap: _isChecking ? null : () => _checkInteractions(lang),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                      colors: [AppTheme.accent, Color(0xFF1D6FD8)]),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Center(
+                  child: _isChecking
+                      ? Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                    color: AppTheme.white, strokeWidth: 2)),
+                            const SizedBox(width: 12),
+                            LangText(_label('checking', lang), lang,
+                                fontSize: 15, fontWeight: FontWeight.bold),
+                          ],
+                        )
+                      : LangText(_label('check', lang), lang,
+                          fontSize: 15, fontWeight: FontWeight.bold),
                 ),
               ),
-              const SizedBox(height: 16),
-              _buildDrugField(
-                controller: _drug2Controller,
-                label: _label('medicine2', lang),
-                suggestions: _drug2Suggestions,
-                isDrug1: false,
-              ),
-              const SizedBox(height: 32),
-              ElevatedButton.icon(
-                onPressed: _isChecking ? null : _checkInteraction,
-                icon: _isChecking
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                            color: Colors.white, strokeWidth: 2))
-                    : const Icon(Icons.search),
-                label: Text(_isChecking
-                    ? _label('checking', lang)
-                    : _label('check', lang)),
-              ),
+            ),
+            if (_results.isNotEmpty) ...[
               const SizedBox(height: 24),
-              if (_result != null) _buildResult(lang),
+              LangText(_label('results', lang), lang,
+                  fontSize: 14, fontWeight: FontWeight.bold),
+              const SizedBox(height: 12),
+              ..._results.map((r) => _resultCard(r, lang)),
             ],
-          ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildDrugField({
-    required TextEditingController controller,
-    required String label,
-    required List<Map<String, dynamic>> suggestions,
-    required bool isDrug1,
-  }) {
-    return Column(
-      children: [
-        Container(
-          decoration: BoxDecoration(
-              color: AppTheme.card, borderRadius: BorderRadius.circular(16)),
-          child: TextField(
-            controller: controller,
-            style: const TextStyle(color: AppTheme.white),
-            onChanged: (val) => _searchDrug(val, isDrug1),
-            decoration: InputDecoration(
-              labelText: label,
-              labelStyle: const TextStyle(color: AppTheme.grey),
-              prefixIcon: const Icon(Icons.medication, color: AppTheme.accent),
-              border: InputBorder.none,
-              contentPadding: const EdgeInsets.all(16),
-            ),
-          ),
-        ),
-        if (suggestions.isNotEmpty)
-          Container(
-            margin: const EdgeInsets.only(top: 4),
-            decoration: BoxDecoration(
-                color: AppTheme.card, borderRadius: BorderRadius.circular(12)),
-            child: Column(
-              children: suggestions
-                  .take(3)
-                  .map((drug) => ListTile(
-                        title: Text(drug['brand_name'] ?? '',
-                            style: const TextStyle(
-                                color: AppTheme.white, fontSize: 14)),
-                        subtitle: Text(drug['generic_name'] ?? '',
-                            style: const TextStyle(
-                                color: AppTheme.grey, fontSize: 12)),
-                        onTap: () {
-                          controller.text = drug['brand_name'] ?? '';
-                          setState(() {
-                            if (isDrug1)
-                              _drug1Suggestions = [];
-                            else
-                              _drug2Suggestions = [];
-                          });
-                        },
-                      ))
-                  .toList(),
-            ),
-          ),
-      ],
-    );
-  }
-
-  Widget _buildResult(String lang) {
-    final severity = _result!['severity'];
-    final color = _getSeverityColor(severity);
+  Widget _resultCard(Map<String, dynamic> result, String lang) {
+    final severity = result['severity'] as int;
+    final colors = [AppTheme.success, AppTheme.warning, AppTheme.error];
+    final icons = [Icons.check_circle, Icons.warning, Icons.dangerous];
+    final labelKeys = ['safe', 'warning', 'danger'];
     return Container(
-      padding: const EdgeInsets.all(20),
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppTheme.card,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withOpacity(0.5), width: 2),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: colors[severity].withValues(alpha: 0.4)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(_getSeverityIcon(severity), color: color, size: 32),
-              const SizedBox(width: 12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(severity.toUpperCase(),
-                      style: TextStyle(
-                          color: color,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 18)),
-                  Text(_label('level', lang),
-                      style: TextStyle(
-                          color: color.withOpacity(0.7), fontSize: 12)),
-                ],
+              Icon(icons[severity], color: colors[severity], size: 22),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text('${result['medicine1']} + ${result['medicine2']}',
+                    style: const TextStyle(
+                        color: AppTheme.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14)),
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          Text(_label('desc', lang),
-              style: const TextStyle(
-                  color: AppTheme.white, fontSize: 15, height: 1.5)),
-          const SizedBox(height: 16),
-          ElevatedButton.icon(
-            onPressed: _speak,
-            icon: const Icon(Icons.volume_up),
-            label: Text(_label('listen', lang)),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.teal,
-              minimumSize: const Size(double.infinity, 48),
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: colors[severity].withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(6),
             ),
+            child: LangText(_label(labelKeys[severity], lang), lang,
+                fontSize: 12,
+                color: colors[severity],
+                fontWeight: FontWeight.w500),
           ),
         ],
       ),

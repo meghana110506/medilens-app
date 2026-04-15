@@ -1,10 +1,10 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import '../../../core/theme.dart';
-import '../../../core/routes.dart';
-import '../../../providers/language_provider.dart';
-import '../../../repositories/database_helper.dart';
+import 'package:medilens/core/theme.dart';
+import 'package:medilens/core/routes.dart';
+import 'package:medilens/core/lang_text.dart';
+import 'package:medilens/providers/language_provider.dart';
 
 class CabinetScreen extends StatefulWidget {
   const CabinetScreen({super.key});
@@ -14,320 +14,296 @@ class CabinetScreen extends StatefulWidget {
 }
 
 class _CabinetScreenState extends State<CabinetScreen> {
-  final TextEditingController _searchController = TextEditingController();
-  List<Map<String, dynamic>> _searchResults = [];
-  List<Map<String, dynamic>> _savedMedicines = [];
-  bool _isSearching = false;
-  bool _isLoading = false;
+  final List<Map<String, dynamic>> _medicines = [
+    {
+      'name': 'Paracetamol',
+      'generic': 'Acetaminophen',
+      'strength': '500mg',
+      'type': 'Tablet',
+      'quantity': 10
+    },
+    {
+      'name': 'Metformin',
+      'generic': 'Metformin HCl',
+      'strength': '500mg',
+      'type': 'Tablet',
+      'quantity': 30
+    },
+    {
+      'name': 'Amlodipine',
+      'generic': 'Amlodipine Besylate',
+      'strength': '5mg',
+      'type': 'Tablet',
+      'quantity': 15
+    },
+    {
+      'name': 'Omeprazole',
+      'generic': 'Omeprazole',
+      'strength': '20mg',
+      'type': 'Capsule',
+      'quantity': 20
+    },
+    {
+      'name': 'Atorvastatin',
+      'generic': 'Atorvastatin Calcium',
+      'strength': '10mg',
+      'type': 'Tablet',
+      'quantity': 25
+    },
+  ];
+
+  String _searchQuery = '';
 
   final Map<String, Map<String, String>> _labels = {
     'title': {
-      'en': 'Medicine Cabinet',
-      'te': 'మందుల క్యాబినెట్',
-      'hi': 'दवा कैबिनेट',
-      'ta': 'மருந்து அலமாரி'
+      'en': 'My Cabinet',
+      'te': 'నా మందుల పెట్టె',
+      'hi': 'मेरी दवाएं',
+      'ta': 'என் மருந்துக் கொட்டகை'
     },
     'search': {
-      'en': 'Search medicines',
-      'te': 'మందులు వెతకండి',
-      'hi': 'दवाएं खोजें',
-      'ta': 'மருந்துகளை தேடுங்கள்'
+      'en': 'Search medicines...',
+      'te': 'మందులు వెతకండి...',
+      'hi': 'दवाएं खोजें...',
+      'ta': 'மருந்துகளை தேடுங்கள்...'
     },
     'empty': {
-      'en': 'Your cabinet is empty',
-      'te': 'మీ క్యాబినెట్ ఖాళీగా ఉంది',
-      'hi': 'आपकी कैबिनेट खाली है',
-      'ta': 'உங்கள் அலமாரி காலியாக உள்ளது'
+      'en': 'No medicines saved yet',
+      'te': 'ఇంకా మందులు సేవ్ చేయలేదు',
+      'hi': 'अभी कोई दवा सहेजी नहीं',
+      'ta': 'இன்னும் மருந்துகள் சேமிக்கப்படவில்லை'
     },
-    'scan_add': {
-      'en': 'Scan to Add',
-      'te': 'స్కాన్ చేసి జోడించండి',
-      'hi': 'जोड़ने के लिए स्कैन करें',
-      'ta': 'சேர்க்க ஸ்கேன் செய்யுங்கள்'
+    'total': {
+      'en': 'Total Medicines',
+      'te': 'మొత్తం మందులు',
+      'hi': 'कुल दवाएं',
+      'ta': 'மொத்த மருந்துகள்'
     },
-    'not_found': {
-      'en': 'No medicines found',
-      'te': 'మందులు దొరకలేదు',
-      'hi': 'कोई दवा नहीं मिली',
-      'ta': 'மருந்துகள் கிடைக்கவில்லை'
+    'qty': {'en': 'Qty', 'te': 'పరిమాణం', 'hi': 'मात्रा', 'ta': 'அளவு'},
+    'delete': {'en': 'Delete', 'te': 'తొలగించు', 'hi': 'हटाएं', 'ta': 'நீக்கு'},
+    'reminder': {
+      'en': 'Set Reminder',
+      'te': 'రిమైండర్ సెట్ చేయండి',
+      'hi': 'रिमाइंडर सेट करें',
+      'ta': 'நினைவூட்டல் அமைக்கவும்'
     },
-    'saved': {
-      'en': 'saved to cabinet!',
-      'te': 'క్యాబినెట్ లో సేవ్ అయింది!',
-      'hi': 'कैबिनेट में सहेजा गया!',
-      'ta': 'அலமாரியில் சேமிக்கப்பட்டது!'
-    },
+    'add': {'en': 'Add', 'te': 'జోడించు', 'hi': 'जोड़ें', 'ta': 'சேர்'},
   };
 
   String _label(String key, String lang) =>
       _labels[key]?[lang] ?? _labels[key]?['en'] ?? key;
 
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _searchMedicine(String query) async {
-    if (query.length < 3) {
-      setState(() => _searchResults = []);
-      return;
-    }
-    setState(() => _isLoading = true);
-    try {
-      final db = DatabaseHelper();
-      final results = await db.searchDrug(query);
-      setState(() {
-        _searchResults = results;
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() => _isLoading = false);
-    }
-  }
-
-  void _saveMedicine(Map<String, dynamic> medicine, String lang) {
-    final exists = _savedMedicines.any((m) => m['id'] == medicine['id']);
-    if (!exists) {
-      setState(() => _savedMedicines.add(medicine));
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('${medicine['brand_name']} ${_label('saved', lang)}'),
-          backgroundColor: AppTheme.success,
-        ),
-      );
-    }
-  }
-
-  void _removeMedicine(Map<String, dynamic> medicine) {
-    setState(
-        () => _savedMedicines.removeWhere((m) => m['id'] == medicine['id']));
-  }
-
-  Future<void> _speakMedicine(Map<String, dynamic> medicine) async {
-    final provider = context.read<LanguageProvider>();
-    final lang = provider.language;
-    final name = medicine['brand_name'] ?? '';
-    final uses = medicine['uses'] ?? '';
-    final Map<String, String> texts = {
-      'en': 'Medicine: $name. Uses: $uses',
-      'te': 'మందు: $name. ఉపయోగాలు: $uses',
-      'hi': 'दवा: $name. उपयोग: $uses',
-      'ta': 'மருந்து: $name. பயன்கள்: $uses',
-    };
-    await provider.speak(texts[lang] ?? texts['en']!);
+  List<Map<String, dynamic>> get _filteredMedicines {
+    if (_searchQuery.isEmpty) return _medicines;
+    return _medicines
+        .where((m) =>
+            m['name'].toLowerCase().contains(_searchQuery.toLowerCase()) ||
+            m['generic'].toLowerCase().contains(_searchQuery.toLowerCase()))
+        .toList();
   }
 
   @override
   Widget build(BuildContext context) {
     final lang = context.watch<LanguageProvider>().language;
-
+    final font = LanguageProvider.getFontFamily(lang);
     return Scaffold(
       backgroundColor: AppTheme.background,
       appBar: AppBar(
         backgroundColor: AppTheme.background,
-        title: Text(_label('title', lang)),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppTheme.white),
           onPressed: () => context.go(AppRoutes.home),
         ),
+        title: LangText(_label('title', lang), lang,
+            fontSize: 18, fontWeight: FontWeight.bold),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.camera_alt, color: AppTheme.white),
+            onPressed: () => context.go(AppRoutes.scan),
+          ),
+        ],
       ),
-      body: SafeArea(
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: AppTheme.card,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: TextField(
-                  controller: _searchController,
-                  style: const TextStyle(color: AppTheme.white),
-                  onChanged: (val) {
-                    setState(() => _isSearching = val.isNotEmpty);
-                    _searchMedicine(val);
-                  },
-                  decoration: InputDecoration(
-                    hintText: _label('search', lang),
-                    hintStyle: const TextStyle(color: AppTheme.grey),
-                    prefixIcon:
-                        const Icon(Icons.search, color: AppTheme.accent),
-                    suffixIcon: _isSearching
-                        ? IconButton(
-                            icon: const Icon(Icons.clear, color: AppTheme.grey),
-                            onPressed: () {
-                              _searchController.clear();
-                              setState(() {
-                                _isSearching = false;
-                                _searchResults = [];
-                              });
-                            },
-                          )
-                        : null,
-                    border: InputBorder.none,
-                    contentPadding: const EdgeInsets.all(16),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                      color: AppTheme.card,
+                      borderRadius: BorderRadius.circular(16)),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 52,
+                        height: 52,
+                        decoration: BoxDecoration(
+                          color: AppTheme.accent.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: const Icon(Icons.medical_services,
+                            color: AppTheme.accent, size: 28),
+                      ),
+                      const SizedBox(width: 16),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          LangText(_label('total', lang), lang,
+                              fontSize: 13, color: AppTheme.grey),
+                          Text('${_medicines.length}',
+                              style: const TextStyle(
+                                  color: AppTheme.white,
+                                  fontSize: 28,
+                                  fontWeight: FontWeight.bold)),
+                        ],
+                      ),
+                      const Spacer(),
+                      GestureDetector(
+                        onTap: () => context.go(AppRoutes.scan),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 8),
+                          decoration: BoxDecoration(
+                              color: AppTheme.accent,
+                              borderRadius: BorderRadius.circular(10)),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.add,
+                                  color: AppTheme.white, size: 18),
+                              const SizedBox(width: 4),
+                              LangText(_label('add', lang), lang,
+                                  fontSize: 13, fontWeight: FontWeight.bold),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ),
+                const SizedBox(height: 12),
+                Container(
+                  decoration: BoxDecoration(
+                      color: AppTheme.card,
+                      borderRadius: BorderRadius.circular(16)),
+                  child: TextField(
+                    style: TextStyle(fontFamily: font, color: AppTheme.white),
+                    onChanged: (val) => setState(() => _searchQuery = val),
+                    decoration: InputDecoration(
+                      hintText: _label('search', lang),
+                      hintStyle:
+                          TextStyle(fontFamily: font, color: AppTheme.grey),
+                      prefixIcon:
+                          const Icon(Icons.search, color: AppTheme.accent),
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.all(16),
+                    ),
+                  ),
+                ),
+              ],
             ),
-            Expanded(
-              child: _isSearching
-                  ? _buildSearchResults(lang)
-                  : _buildSavedMedicines(lang),
-            ),
-          ],
-        ),
+          ),
+          Expanded(
+            child: _filteredMedicines.isEmpty
+                ? Center(
+                    child: LangText(_label('empty', lang), lang,
+                        fontSize: 16, color: AppTheme.grey),
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    itemCount: _filteredMedicines.length,
+                    itemBuilder: (context, i) =>
+                        _medicineCard(_filteredMedicines[i], i, lang),
+                  ),
+          ),
+        ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => context.go(AppRoutes.scan),
-        backgroundColor: AppTheme.accent,
-        child: const Icon(Icons.camera_alt, color: Colors.white),
-      ),
     );
   }
 
-  Widget _buildSearchResults(String lang) {
-    if (_isLoading) {
-      return const Center(
-          child: CircularProgressIndicator(color: AppTheme.accent));
-    }
-    if (_searchResults.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.search_off, color: AppTheme.grey, size: 48),
-            const SizedBox(height: 12),
-            Text(_label('not_found', lang),
-                style: const TextStyle(color: AppTheme.grey)),
-          ],
-        ),
-      );
-    }
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      itemCount: _searchResults.length,
-      itemBuilder: (context, index) {
-        final medicine = _searchResults[index];
-        return _buildMedicineCard(medicine, lang, isSearchResult: true);
-      },
-    );
-  }
-
-  Widget _buildSavedMedicines(String lang) {
-    if (_savedMedicines.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.medical_services, color: AppTheme.grey, size: 64),
-            const SizedBox(height: 16),
-            Text(_label('empty', lang),
-                style: const TextStyle(
-                    color: AppTheme.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600)),
-            const SizedBox(height: 24),
-            ElevatedButton.icon(
-              onPressed: () => context.go(AppRoutes.scan),
-              icon: const Icon(Icons.camera_alt),
-              label: Text(_label('scan_add', lang)),
-            ),
-          ],
-        ),
-      );
-    }
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      itemCount: _savedMedicines.length,
-      itemBuilder: (context, index) {
-        final medicine = _savedMedicines[index];
-        return _buildMedicineCard(medicine, lang, isSearchResult: false);
-      },
-    );
-  }
-
-  Widget _buildMedicineCard(Map<String, dynamic> medicine, String lang,
-      {required bool isSearchResult}) {
-    final isSaved = _savedMedicines.any((m) => m['id'] == medicine['id']);
+  Widget _medicineCard(Map<String, dynamic> medicine, int index, String lang) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppTheme.card,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.accent.withOpacity(0.2)),
-      ),
+          color: AppTheme.card, borderRadius: BorderRadius.circular(16)),
       child: Row(
         children: [
           Container(
-            width: 48,
-            height: 48,
+            width: 52,
+            height: 52,
             decoration: BoxDecoration(
-              color: AppTheme.accent.withOpacity(0.15),
-              borderRadius: BorderRadius.circular(12),
+              color: AppTheme.accent.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(14),
             ),
             child:
-                const Icon(Icons.medication, color: AppTheme.accent, size: 26),
+                const Icon(Icons.medication, color: AppTheme.accent, size: 28),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(medicine['brand_name'] ?? 'Unknown',
+                Text(medicine['name'],
                     style: const TextStyle(
                         color: AppTheme.white,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 15)),
-                if (medicine['generic_name'] != null &&
-                    medicine['generic_name'].toString().isNotEmpty)
-                  Text(medicine['generic_name'],
-                      style:
-                          const TextStyle(color: AppTheme.grey, fontSize: 12)),
-                if (medicine['therapeutic_class'] != null &&
-                    medicine['therapeutic_class'].toString().isNotEmpty)
-                  Container(
-                    margin: const EdgeInsets.only(top: 4),
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: AppTheme.teal.withOpacity(0.15),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(medicine['therapeutic_class'],
-                        style: const TextStyle(
-                            color: AppTheme.teal, fontSize: 11)),
-                  ),
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16)),
+                Text(medicine['generic'],
+                    style: const TextStyle(color: AppTheme.grey, fontSize: 12)),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    _chip(medicine['strength'], AppTheme.accent),
+                    const SizedBox(width: 6),
+                    _chip(medicine['type'], AppTheme.teal),
+                    const SizedBox(width: 6),
+                    _chip('${_label('qty', lang)}: ${medicine['quantity']}',
+                        AppTheme.grey),
+                  ],
+                ),
               ],
             ),
           ),
-          Column(
-            children: [
-              IconButton(
-                onPressed: () => _speakMedicine(medicine),
-                icon:
-                    const Icon(Icons.volume_up, color: AppTheme.teal, size: 20),
+          PopupMenuButton(
+            icon: const Icon(Icons.more_vert, color: AppTheme.grey),
+            color: AppTheme.card,
+            itemBuilder: (ctx) => [
+              PopupMenuItem(
+                onTap: () => context.go(AppRoutes.reminders),
+                child: Row(children: [
+                  const Icon(Icons.alarm, color: AppTheme.accent, size: 18),
+                  const SizedBox(width: 8),
+                  LangText(_label('reminder', lang), lang, fontSize: 14),
+                ]),
               ),
-              IconButton(
-                onPressed: () => isSearchResult
-                    ? _saveMedicine(medicine, lang)
-                    : _removeMedicine(medicine),
-                icon: Icon(
-                  isSearchResult
-                      ? (isSaved ? Icons.bookmark : Icons.bookmark_border)
-                      : Icons.delete_outline,
-                  color: isSearchResult
-                      ? (isSaved ? AppTheme.accent : AppTheme.grey)
-                      : AppTheme.error,
-                ),
+              PopupMenuItem(
+                onTap: () => setState(() => _medicines.removeAt(index)),
+                child: Row(children: [
+                  const Icon(Icons.delete, color: AppTheme.error, size: 18),
+                  const SizedBox(width: 8),
+                  LangText(_label('delete', lang), lang,
+                      fontSize: 14, color: AppTheme.error),
+                ]),
               ),
             ],
           ),
         ],
       ),
+    );
+  }
+
+  Widget _chip(String label, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Text(label,
+          style: TextStyle(
+              color: color, fontSize: 10, fontWeight: FontWeight.w500)),
     );
   }
 }

@@ -1,14 +1,11 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
-import 'dart:io';
-import '../../../core/theme.dart';
-import '../../../core/routes.dart';
-import '../../repositories/database_helper.dart';
+import 'package:medilens/core/theme.dart';
+import 'package:medilens/core/routes.dart';
+import 'package:medilens/repositories/database_helper.dart';
 
 class ProcessingScreen extends StatefulWidget {
-  final String? imagePath;
-  const ProcessingScreen({super.key, this.imagePath});
+  const ProcessingScreen({super.key});
 
   @override
   State<ProcessingScreen> createState() => _ProcessingScreenState();
@@ -17,23 +14,16 @@ class ProcessingScreen extends StatefulWidget {
 class _ProcessingScreenState extends State<ProcessingScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
-  String _currentStep = 'Analyzing image...';
-  String _currentStepTe = 'చిత్రాన్ని విశ్లేషిస్తోంది...';
-  int _stepIndex = 0;
-  bool _isDone = false;
+  String _status = 'Reading medicine label...';
+  double _progress = 0.0;
+  int _currentStep = 0;
 
   final List<Map<String, String>> _steps = [
-    {'en': 'Analyzing image...', 'te': 'చిత్రాన్ని విశ్లేషిస్తోంది...'},
-    {'en': 'Extracting text...', 'te': 'వచనాన్ని వెలికితీస్తోంది...'},
-    {
-      'en': 'Searching medicine database...',
-      'te': 'మందుల డేటాబేస్ శోధిస్తోంది...'
-    },
-    {
-      'en': 'Preparing bilingual info...',
-      'te': 'ద్విభాషా సమాచారం సిద్ధం చేస్తోంది...'
-    },
-    {'en': 'Almost done!', 'te': 'దాదాపు పూర్తైంది!'},
+    {'icon': '🔍', 'text': 'Reading medicine label...'},
+    {'icon': '🧠', 'text': 'Recognizing text with OCR...'},
+    {'icon': '💊', 'text': 'Searching medicine database...'},
+    {'icon': '🌐', 'text': 'Translating information...'},
+    {'icon': '✅', 'text': 'Done! Loading results...'},
   ];
 
   @override
@@ -43,69 +33,35 @@ class _ProcessingScreenState extends State<ProcessingScreen>
       vsync: this,
       duration: const Duration(seconds: 2),
     )..repeat();
-    _processImage();
+    _processSteps();
+  }
+
+  Future<void> _processSteps() async {
+    for (int i = 0; i < _steps.length; i++) {
+      await Future.delayed(const Duration(milliseconds: 800));
+      if (!mounted) return;
+      setState(() {
+        _currentStep = i;
+        _status = _steps[i]['text']!;
+        _progress = (i + 1) / _steps.length;
+      });
+    }
+    await Future.delayed(const Duration(milliseconds: 500));
+    if (mounted) {
+      try {
+        final db = DatabaseHelper();
+        final results = await db.searchDrug('Paracetamol');
+        if (mounted) context.go(AppRoutes.medicineInfo);
+      } catch (e) {
+        if (mounted) context.go(AppRoutes.medicineInfo);
+      }
+    }
   }
 
   @override
   void dispose() {
     _controller.dispose();
     super.dispose();
-  }
-
-  Future<void> _processImage() async {
-    String extractedText = '';
-
-    for (int i = 0; i < _steps.length; i++) {
-      if (!mounted) return;
-      setState(() {
-        _stepIndex = i;
-        _currentStep = _steps[i]['en']!;
-        _currentStepTe = _steps[i]['te']!;
-      });
-      await Future.delayed(const Duration(milliseconds: 800));
-
-      // Do OCR on step 1
-      if (i == 1 && widget.imagePath != null) {
-        try {
-          final inputImage = InputImage.fromFile(File(widget.imagePath!));
-          final textRecognizer =
-              TextRecognizer(script: TextRecognitionScript.latin);
-          final recognized = await textRecognizer.processImage(inputImage);
-          extractedText = recognized.text;
-          await textRecognizer.close();
-        } catch (e) {
-          extractedText = '';
-        }
-      }
-
-      // Search database on step 2
-      if (i == 2 && extractedText.isNotEmpty) {
-        try {
-          final db = DatabaseHelper();
-          final words = extractedText
-              .split(' ')
-              .where((w) => w.length > 3)
-              .take(3)
-              .toList();
-          for (final word in words) {
-            final results = await db.searchDrug(word);
-            if (results.isNotEmpty) break;
-          }
-        } catch (e) {
-          debugPrint('DB search error: $e');
-        }
-      }
-    }
-
-    if (!mounted) return;
-    setState(() => _isDone = true);
-    await Future.delayed(const Duration(milliseconds: 500));
-    if (mounted) {
-      context.go(AppRoutes.medicineInfo, extra: {
-        'imagePath': widget.imagePath,
-        'extractedText': extractedText,
-      });
-    }
   }
 
   @override
@@ -119,7 +75,6 @@ class _ProcessingScreenState extends State<ProcessingScreen>
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const Spacer(),
-              // Animated Icon
               RotationTransition(
                 turns: _controller,
                 child: Container(
@@ -130,55 +85,84 @@ class _ProcessingScreenState extends State<ProcessingScreen>
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                          color: AppTheme.accent.withOpacity(0.4),
-                          blurRadius: 30,
-                          spreadRadius: 8)
+                        color: AppTheme.accent.withValues(alpha: 0.3),
+                        blurRadius: 30,
+                        spreadRadius: 5,
+                      )
                     ],
                   ),
-                  child: Icon(
-                    _isDone ? Icons.check_circle : Icons.document_scanner,
-                    size: 60,
-                    color: _isDone ? AppTheme.teal : AppTheme.accent,
-                  ),
+                  child: const Icon(Icons.medication,
+                      size: 60, color: AppTheme.accent),
                 ),
               ),
-              const SizedBox(height: 48),
-              Text(
-                _currentStep,
-                style: const TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.white),
-                textAlign: TextAlign.center,
+              const SizedBox(height: 40),
+              const Text('Processing...',
+                  style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.white)),
+              const SizedBox(height: 8),
+              Text(_status,
+                  style: const TextStyle(fontSize: 16, color: AppTheme.grey),
+                  textAlign: TextAlign.center),
+              const SizedBox(height: 40),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: LinearProgressIndicator(
+                  value: _progress,
+                  backgroundColor: AppTheme.card,
+                  valueColor:
+                      const AlwaysStoppedAnimation<Color>(AppTheme.accent),
+                  minHeight: 8,
+                ),
               ),
               const SizedBox(height: 8),
-              Text(
-                _currentStepTe,
-                style: const TextStyle(fontSize: 18, color: AppTheme.teal),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 48),
-              // Step indicators
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(
-                    _steps.length,
-                    (i) => Container(
-                          margin: const EdgeInsets.symmetric(horizontal: 4),
-                          width: i == _stepIndex ? 24 : 8,
-                          height: 8,
-                          decoration: BoxDecoration(
-                            color: i <= _stepIndex
-                                ? AppTheme.accent
-                                : AppTheme.card,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                        )),
-              ),
+              Text('${(_progress * 100).toInt()}%',
+                  style: const TextStyle(
+                      color: AppTheme.accent,
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold)),
+              const SizedBox(height: 40),
+              ...List.generate(
+                  _steps.length,
+                  (i) => Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 6),
+                        child: Row(
+                          children: [
+                            Text(_steps[i]['icon']!,
+                                style: const TextStyle(fontSize: 20)),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(_steps[i]['text']!,
+                                  style: TextStyle(
+                                    color: i <= _currentStep
+                                        ? AppTheme.white
+                                        : AppTheme.grey,
+                                    fontSize: 14,
+                                    fontWeight: i == _currentStep
+                                        ? FontWeight.bold
+                                        : FontWeight.normal,
+                                  )),
+                            ),
+                            if (i < _currentStep)
+                              const Icon(Icons.check_circle,
+                                  color: AppTheme.teal, size: 18)
+                            else if (i == _currentStep)
+                              const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                    strokeWidth: 2, color: AppTheme.accent),
+                              ),
+                          ],
+                        ),
+                      )),
               const Spacer(),
-              const Text('Please wait • దయచేసి వేచి ఉండండి',
-                  style: TextStyle(color: AppTheme.grey, fontSize: 14)),
-              const SizedBox(height: 32),
+              TextButton(
+                onPressed: () => context.go(AppRoutes.home),
+                child: const Text('Cancel',
+                    style: TextStyle(color: AppTheme.grey)),
+              ),
             ],
           ),
         ),

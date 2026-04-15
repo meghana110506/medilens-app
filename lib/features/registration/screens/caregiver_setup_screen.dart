@@ -1,9 +1,10 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import '../../../core/theme.dart';
-import '../../../core/routes.dart';
-import '../../../providers/language_provider.dart';
+import 'package:medilens/core/theme.dart';
+import 'package:medilens/core/routes.dart';
+import 'package:medilens/core/lang_text.dart';
+import 'package:medilens/providers/language_provider.dart';
 
 class CaregiverSetupScreen extends StatefulWidget {
   const CaregiverSetupScreen({super.key});
@@ -13,293 +14,319 @@ class CaregiverSetupScreen extends StatefulWidget {
 }
 
 class _CaregiverSetupScreenState extends State<CaregiverSetupScreen> {
-  final List<Map<String, TextEditingController>> _caregivers = [
+  final _nameController = TextEditingController();
+  final _phoneController = TextEditingController();
+  String _selectedRelation = 'daughter';
+
+  final List<Map<String, String>> _relations = [
     {
-      'name': TextEditingController(),
-      'phone': TextEditingController(),
-      'relationship': TextEditingController(),
-    }
+      'key': 'daughter',
+      'en': '👧 Daughter',
+      'te': '👧 కుమార్తె',
+      'hi': '👧 बेटी',
+      'ta': '👧 மகள்'
+    },
+    {
+      'key': 'son',
+      'en': '👦 Son',
+      'te': '👦 కుమారుడు',
+      'hi': '👦 बेटा',
+      'ta': '👦 மகன்'
+    },
+    {
+      'key': 'spouse',
+      'en': '👫 Spouse',
+      'te': '👫 జీవిత భాగస్వామి',
+      'hi': '👫 जीवनसाथी',
+      'ta': '👫 துணைவர்'
+    },
+    {
+      'key': 'doctor',
+      'en': '👨‍⚕️ Doctor',
+      'te': '👨‍⚕️ డాక్టర్',
+      'hi': '👨‍⚕️ डॉक्टर',
+      'ta': '👨‍⚕️ மருத்துவர்'
+    },
   ];
 
   final Map<String, Map<String, String>> _labels = {
     'title': {
-      'en': 'Caregiver Setup',
-      'te': 'సంరక్షకుల వివరాలు',
-      'hi': 'देखभाल करने वाले',
-      'ta': 'பராமரிப்பாளர் அமைப்பு'
+      'en': 'Emergency Caregiver',
+      'te': 'అత్యవసర సంరక్షకుడు',
+      'hi': 'आपातकालीन देखभालकर्ता',
+      'ta': 'அவசர பராமரிப்பாளர்'
     },
-    'subtitle': {
-      'en': 'Add Caregivers',
-      'te': 'సంరక్షకులను జోడించండి',
-      'hi': 'देखभालकर्ता जोड़ें',
-      'ta': 'பராமரிப்பாளர்களை சேர்க்கவும்'
+    'sub': {
+      'en': 'Who to contact in emergency',
+      'te': 'అత్యవసర సమయంలో ఎవరిని సంప్రదించాలి',
+      'hi': 'आपात स्थिति में किससे संपर्क करें',
+      'ta': 'அவசரகாலத்தில் யாரை தொடர்பு கொள்வது'
     },
-    'desc': {
-      'en': 'They will be alerted in emergencies via SOS',
-      'te': 'అత్యవసర సమయంలో వారికి SOS అలర్ట్ వెళ్తుంది',
-      'hi': 'आपात स्थिति में उन्हें SOS अलर्ट भेजा जाएगा',
-      'ta': 'அவசரநிலையில் அவர்களுக்கு SOS அலர்ட் அனுப்பப்படும்'
+    'sos_info': {
+      'en': '🆘 This person gets SMS + GPS if you press the SOS button.',
+      'te': '🆘 మీరు SOS బటన్ నొక్కినప్పుడు ఈ వ్యక్తికి SMS + GPS వస్తుంది.',
+      'hi': '🆘 SOS बटन दबाने पर इस व्यक्ति को SMS + GPS मिलेगा।',
+      'ta': '🆘 நீங்கள் SOS பொத்தானை அழுத்தினால் இந்த நபருக்கு SMS + GPS வரும்.'
     },
-    'name': {'en': 'Name', 'te': 'పేరు', 'hi': 'नाम', 'ta': 'பெயர்'},
-    'phone': {'en': 'Phone', 'te': 'ఫోన్', 'hi': 'फ़ोन', 'ta': 'தொலைபேசி'},
+    'name': {
+      'en': 'Caregiver Name',
+      'te': 'సంరక్షకుడి పేరు',
+      'hi': 'देखभालकर्ता का नाम',
+      'ta': 'பராமரிப்பாளரின் பெயர்'
+    },
     'relation': {
       'en': 'Relationship',
       'te': 'సంబంధం',
       'hi': 'संबंध',
       'ta': 'உறவு'
     },
-    'primary': {
-      'en': 'Primary Caregiver',
-      'te': 'ప్రాథమిక సంరక్షకుడు',
-      'hi': 'प्राथमिक देखभालकर्ता',
-      'ta': 'முதன்மை பராமரிப்பாளர்'
+    'phone': {
+      'en': 'Phone Number',
+      'te': 'ఫోన్ నంబర్',
+      'hi': 'फ़ोन नंबर',
+      'ta': 'தொலைபேசி எண்'
     },
-    'add': {
-      'en': 'Add Another Caregiver',
-      'te': 'మరొకరిని జోడించండి',
-      'hi': 'और जोड़ें',
-      'ta': 'மற்றொருவரை சேர்க்கவும்'
+    'add_second': {
+      'en': '＋ Add Second Caregiver (Optional)',
+      'te': '＋ రెండవ సంరక్షకుడిని జోడించండి (ఐచ్ఛికం)',
+      'hi': '＋ दूसरा देखभालकर्ता जोड़ें (वैकल्पिक)',
+      'ta': '＋ இரண்டாவது பராமரிப்பாளரை சேர்க்கவும் (விருப்பமானது)'
     },
-    'next': {'en': 'Next', 'te': 'తదుపరి', 'hi': 'अगला', 'ta': 'அடுத்து'},
-    'skip': {
-      'en': 'Skip for now',
-      'te': 'ఇప్పుడు దాటవేయండి',
-      'hi': 'अभी छोड़ें',
-      'ta': 'இப்போது தவிர்'
+    'continue': {
+      'en': 'Continue →',
+      'te': 'కొనసాగించు →',
+      'hi': 'जारी रखें →',
+      'ta': 'தொடர் →'
+    },
+    'step': {
+      'en': 'Step 4 of 5',
+      'te': 'దశ 4/5',
+      'hi': 'चरण 4/5',
+      'ta': 'படி 4/5'
     },
   };
-
-  final List<Map<String, String>> _relationships = [
-    {'en': 'Son', 'te': 'కొడుకు', 'hi': 'बेटा', 'ta': '息子'},
-    {'en': 'Daughter', 'te': 'కూతురు', 'hi': 'बेटी', 'ta': 'மகள்'},
-    {
-      'en': 'Spouse',
-      'te': 'జీవిత భాగస్వామి',
-      'hi': 'जीवनसाथी',
-      'ta': 'வாழ்க்கைத்துணை'
-    },
-    {'en': 'Brother', 'te': 'అన్న/తమ్ముడు', 'hi': 'भाई', 'ta': 'சகோதரன்'},
-    {'en': 'Sister', 'te': 'అక్క/చెల్లి', 'hi': 'बहन', 'ta': 'சகோதரி'},
-    {'en': 'Friend', 'te': 'స్నేహితుడు', 'hi': 'दोस्त', 'ta': 'நண்பர்'},
-    {
-      'en': 'Neighbour',
-      'te': 'పొరుగువారు',
-      'hi': 'पड़ोसी',
-      'ta': 'அண்டை வீட்டார்'
-    },
-    {'en': 'Other', 'te': 'ఇతర', 'hi': 'अन्य', 'ta': 'மற்றவர்'},
-  ];
 
   String _label(String key, String lang) =>
       _labels[key]?[lang] ?? _labels[key]?['en'] ?? key;
 
-  void _addCaregiver() {
-    if (_caregivers.length < 3) {
-      setState(() {
-        _caregivers.add({
-          'name': TextEditingController(),
-          'phone': TextEditingController(),
-          'relationship': TextEditingController(),
-        });
-      });
-    }
-  }
-
-  void _removeCaregiver(int index) {
-    if (_caregivers.length > 1) {
-      setState(() {
-        _caregivers[index].forEach((_, c) => c.dispose());
-        _caregivers.removeAt(index);
-      });
-    }
-  }
-
   @override
   void dispose() {
-    for (final c in _caregivers) {
-      c.forEach((_, controller) => controller.dispose());
-    }
+    _nameController.dispose();
+    _phoneController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final lang = context.watch<LanguageProvider>().language;
-
+    final font = LanguageProvider.getFontFamily(lang);
     return Scaffold(
       backgroundColor: AppTheme.background,
-      appBar: AppBar(
-        title: Text(_label('title', lang)),
-        backgroundColor: AppTheme.background,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppTheme.white),
-          onPressed: () => context.go(AppRoutes.healthProfile),
-        ),
-      ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(_label('subtitle', lang),
-                  style: const TextStyle(fontSize: 14, color: AppTheme.teal)),
-              const SizedBox(height: 4),
-              Text(_label('title', lang),
-                  style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: AppTheme.white)),
-              const SizedBox(height: 8),
-              Text(_label('desc', lang),
-                  style: const TextStyle(fontSize: 13, color: AppTheme.grey)),
-              const SizedBox(height: 32),
-              ...List.generate(_caregivers.length,
-                  (index) => _buildCaregiverCard(index, lang)),
-              if (_caregivers.length < 3)
-                GestureDetector(
-                  onTap: _addCaregiver,
-                  child: Container(
-                    margin: const EdgeInsets.only(bottom: 16),
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: AppTheme.card,
-                      borderRadius: BorderRadius.circular(16),
-                      border:
-                          Border.all(color: AppTheme.accent.withOpacity(0.5)),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
+        child: Column(
+          children: [
+            _progressDots(3),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(14, 8, 14, 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
                       children: [
-                        const Icon(Icons.add_circle, color: AppTheme.accent),
-                        const SizedBox(width: 8),
-                        Text(_label('add', lang),
-                            style: const TextStyle(
-                                color: AppTheme.accent,
-                                fontWeight: FontWeight.w500)),
-                      ],
-                    ),
-                  ),
-                ),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () => context.go(AppRoutes.accessibility),
-                child: Text(_label('next', lang)),
-              ),
-              const SizedBox(height: 12),
-              TextButton(
-                onPressed: () => context.go(AppRoutes.accessibility),
-                child: Text(_label('skip', lang),
-                    style: const TextStyle(color: AppTheme.grey)),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCaregiverCard(int index, String lang) {
-    final isFirst = index == 0;
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppTheme.card,
-        borderRadius: BorderRadius.circular(16),
-        border: isFirst
-            ? Border.all(color: AppTheme.accent.withOpacity(0.5))
-            : null,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                isFirst
-                    ? '★ ${_label('primary', lang)}'
-                    : 'Caregiver ${index + 1}',
-                style: TextStyle(
-                  color: isFirst ? AppTheme.accent : AppTheme.grey,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 13,
-                ),
-              ),
-              if (!isFirst)
-                IconButton(
-                  onPressed: () => _removeCaregiver(index),
-                  icon: const Icon(Icons.remove_circle,
-                      color: AppTheme.error, size: 20),
-                ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          _buildTextField(
-              _caregivers[index]['name']!, _label('name', lang), Icons.person),
-          const SizedBox(height: 12),
-          _buildTextField(
-              _caregivers[index]['phone']!, _label('phone', lang), Icons.phone,
-              isPhone: true),
-          const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            decoration: BoxDecoration(
-                color: AppTheme.background,
-                borderRadius: BorderRadius.circular(12)),
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<String>(
-                value: _caregivers[index]['relationship']!.text.isEmpty
-                    ? null
-                    : _caregivers[index]['relationship']!.text,
-                hint: Text(_label('relation', lang),
-                    style: const TextStyle(color: AppTheme.grey)),
-                dropdownColor: AppTheme.card,
-                isExpanded: true,
-                items: _relationships
-                    .map((r) => DropdownMenuItem(
-                          value: r['en'],
+                        GestureDetector(
+                          onTap: () => context.go(AppRoutes.healthProfile),
+                          child: Container(
+                            width: 30,
+                            height: 30,
+                            decoration: BoxDecoration(
+                              color: AppTheme.card,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(Icons.arrow_back,
+                                color: AppTheme.white, size: 18),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
                             children: [
-                              Text(r['en']!,
-                                  style: const TextStyle(
-                                      color: AppTheme.white, fontSize: 14)),
-                              Text(r[lang] ?? r['te']!,
-                                  style: const TextStyle(
-                                      color: AppTheme.grey, fontSize: 11)),
+                              LangText(_label('title', lang), lang,
+                                  fontSize: 16, fontWeight: FontWeight.bold),
+                              LangText(_label('sub', lang), lang,
+                                  fontSize: 11, color: AppTheme.grey),
                             ],
                           ),
-                        ))
-                    .toList(),
-                onChanged: (val) => setState(
-                    () => _caregivers[index]['relationship']!.text = val ?? ''),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+                    // SOS info box
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppTheme.error.withValues(alpha: 0.07),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                            color: AppTheme.error.withValues(alpha: 0.2)),
+                      ),
+                      child: LangText(_label('sos_info', lang), lang,
+                          fontSize: 12, color: AppTheme.grey),
+                    ),
+                    const SizedBox(height: 14),
+                    // Name field
+                    LangText('${_label('name', lang)} *', lang,
+                        fontSize: 11,
+                        color: AppTheme.grey,
+                        fontWeight: FontWeight.w600),
+                    const SizedBox(height: 4),
+                    _inputField(_nameController, Icons.person, font),
+                    const SizedBox(height: 12),
+                    // Relationship
+                    LangText(_label('relation', lang), lang,
+                        fontSize: 11,
+                        color: AppTheme.grey,
+                        fontWeight: FontWeight.w600),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      children: _relations.map((r) {
+                        final isSelected = _selectedRelation == r['key'];
+                        return GestureDetector(
+                          onTap: () =>
+                              setState(() => _selectedRelation = r['key']!),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 7),
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? AppTheme.accent.withValues(alpha: 0.15)
+                                  : AppTheme.card,
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: isSelected
+                                    ? AppTheme.accent
+                                    : AppTheme.grey.withValues(alpha: 0.2),
+                                width: isSelected ? 1.5 : 1,
+                              ),
+                            ),
+                            child: LangText(
+                              r[lang] ?? r['en']!,
+                              lang,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color:
+                                  isSelected ? AppTheme.accent : AppTheme.grey,
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 12),
+                    // Phone
+                    LangText('${_label('phone', lang)} *', lang,
+                        fontSize: 11,
+                        color: AppTheme.grey,
+                        fontWeight: FontWeight.w600),
+                    const SizedBox(height: 4),
+                    _inputField(_phoneController, Icons.phone, font,
+                        isPhone: true),
+                    const SizedBox(height: 12),
+                    // Add second caregiver
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppTheme.card,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: AppTheme.grey.withValues(alpha: 0.2),
+                          style: BorderStyle.solid,
+                        ),
+                      ),
+                      child: Center(
+                        child: LangText(_label('add_second', lang), lang,
+                            fontSize: 13, color: AppTheme.grey),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    GestureDetector(
+                      onTap: () => context.go(AppRoutes.accessibility),
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                              colors: [AppTheme.accent, AppTheme.teal]),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Center(
+                          child: LangText(_label('continue', lang), lang,
+                              fontSize: 16, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Center(
+                      child: LangText(_label('step', lang), lang,
+                          fontSize: 12, color: AppTheme.grey),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildTextField(
-      TextEditingController controller, String label, IconData icon,
+  Widget _progressDots(int active) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(14, 8, 14, 4),
+      child: Row(
+        children: List.generate(
+            5,
+            (i) => Expanded(
+                  flex: i == active ? 2 : 1,
+                  child: Container(
+                    height: 4,
+                    margin: const EdgeInsets.only(right: 4),
+                    decoration: BoxDecoration(
+                      color: i < active
+                          ? AppTheme.teal
+                          : i == active
+                              ? AppTheme.accent
+                              : AppTheme.card,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                )),
+      ),
+    );
+  }
+
+  Widget _inputField(
+      TextEditingController controller, IconData icon, String font,
       {bool isPhone = false}) {
     return Container(
       decoration: BoxDecoration(
-          color: AppTheme.background, borderRadius: BorderRadius.circular(12)),
+        color: AppTheme.card,
+        borderRadius: BorderRadius.circular(11),
+        border: Border.all(color: AppTheme.teal.withValues(alpha: 0.5)),
+      ),
       child: TextField(
         controller: controller,
         keyboardType: isPhone ? TextInputType.phone : TextInputType.text,
-        style: const TextStyle(color: AppTheme.white),
+        style: TextStyle(fontFamily: font, color: AppTheme.white, fontSize: 14),
         decoration: InputDecoration(
-          labelText: label,
-          labelStyle: const TextStyle(color: AppTheme.grey, fontSize: 14),
           prefixIcon: Icon(icon, color: AppTheme.accent, size: 20),
+          suffixIcon: const Icon(Icons.check, color: AppTheme.teal, size: 16),
           border: InputBorder.none,
-          contentPadding: const EdgeInsets.all(12),
+          contentPadding:
+              const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
         ),
       ),
     );

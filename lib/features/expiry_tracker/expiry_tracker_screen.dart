@@ -1,9 +1,9 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import '../../../core/theme.dart';
-import '../../../core/routes.dart';
-import '../../../providers/language_provider.dart';
+import 'package:medilens/core/theme.dart';
+import 'package:medilens/core/routes.dart';
+import 'package:medilens/providers/language_provider.dart';
 
 class ExpiryTrackerScreen extends StatefulWidget {
   const ExpiryTrackerScreen({super.key});
@@ -14,9 +14,42 @@ class ExpiryTrackerScreen extends StatefulWidget {
 
 class _ExpiryTrackerScreenState extends State<ExpiryTrackerScreen> {
   final List<Map<String, dynamic>> _medicines = [
-    {'name': 'Paracetamol', 'expiry': '2025-06-30', 'daysLeft': 85},
-    {'name': 'Metformin', 'expiry': '2025-03-15', 'daysLeft': 8},
-    {'name': 'Amlodipine', 'expiry': '2024-12-01', 'daysLeft': -30},
+    {
+      'name': 'Paracetamol',
+      'brand': 'Crocin',
+      'expiry': DateTime(2025, 8, 15),
+      'quantity': 10
+    },
+    {
+      'name': 'Metformin',
+      'brand': 'Glycomet',
+      'expiry': DateTime(2024, 12, 31),
+      'quantity': 30
+    },
+    {
+      'name': 'Amlodipine',
+      'brand': 'Amlokind',
+      'expiry': DateTime(2026, 3, 20),
+      'quantity': 15
+    },
+    {
+      'name': 'Aspirin',
+      'brand': 'Ecosprin',
+      'expiry': DateTime(2024, 11, 10),
+      'quantity': 5
+    },
+    {
+      'name': 'Omeprazole',
+      'brand': 'Omez',
+      'expiry': DateTime(2025, 6, 30),
+      'quantity': 20
+    },
+    {
+      'name': 'Atorvastatin',
+      'brand': 'Atorva',
+      'expiry': DateTime(2026, 1, 15),
+      'quantity': 25
+    },
   ];
 
   final Map<String, Map<String, String>> _labels = {
@@ -26,259 +59,158 @@ class _ExpiryTrackerScreenState extends State<ExpiryTrackerScreen> {
       'hi': 'समाप्ति ट्रैकर',
       'ta': 'காலாவதி கண்காணிப்பு'
     },
-    'subtitle': {
-      'en': 'Medicine Expiry Tracker',
-      'te': 'మందుల గడువు తేదీ ట్రాకర్',
-      'hi': 'दवा समाप्ति ट्रैकर',
-      'ta': 'மருந்து காலாவதி கண்காணிப்பு'
-    },
     'expired': {
       'en': 'Expired',
-      'te': 'గడువు ముగిసింది',
-      'hi': 'समाप्त',
+      'te': 'గడువు తీరింది',
+      'hi': 'समाप्त हो गई',
       'ta': 'காலாவதியானது'
     },
-    'expiring': {
+    'expiring_soon': {
       'en': 'Expiring Soon',
-      'te': 'త్వరలో గడువు ముగుస్తుంది',
+      'te': 'త్వరలో గడువు తీరుతోంది',
       'hi': 'जल्द समाप्त होगी',
       'ta': 'விரைவில் காலாவதியாகும்'
     },
     'good': {'en': 'Good', 'te': 'మంచిది', 'hi': 'अच्छी', 'ta': 'நல்லது'},
+    'qty': {'en': 'Qty', 'te': 'పరిమాణం', 'hi': 'मात्रा', 'ta': 'அளவு'},
     'add': {
       'en': 'Add Medicine',
       'te': 'మందు జోడించండి',
       'hi': 'दवा जोड़ें',
-      'ta': 'மருந்து சேர்க்கவும்'
+      'ta': 'மருந்தை சேர்க்கவும்'
     },
-    'name': {
-      'en': 'Medicine Name',
-      'te': 'మందు పేరు',
-      'hi': 'दवा का नाम',
-      'ta': 'மருந்தின் பெயர்'
-    },
-    'expiry_date': {
-      'en': 'Select Expiry Date',
-      'te': 'గడువు తేదీ ఎంచుకోండి',
-      'hi': 'समाप्ति तिथि चुनें',
-      'ta': 'காலாவதி தேதி தேர்ந்தெடுக்கவும்'
+    'expires': {
+      'en': 'Expires',
+      'te': 'గడువు',
+      'hi': 'समाप्ति',
+      'ta': 'காலாவதி'
     },
     'days_left': {
-      'en': 'd left',
+      'en': 'days left',
       'te': 'రోజులు మిగిలాయి',
-      'hi': 'दिन बचे',
-      'ta': 'நாட்கள் உள்ளன'
-    },
-    'days_ago': {
-      'en': 'd ago',
-      'te': 'రోజుల క్రితం',
-      'hi': 'दिन पहले',
-      'ta': 'நாட்கள் முன்பு'
-    },
-    'cancel': {
-      'en': 'Cancel',
-      'te': 'రద్దు',
-      'hi': 'रद्द करें',
-      'ta': 'ரத்து செய்'
+      'hi': 'दिन बचे हैं',
+      'ta': 'நாட்கள் மீதம்'
     },
   };
 
   String _label(String key, String lang) =>
       _labels[key]?[lang] ?? _labels[key]?['en'] ?? key;
 
-  Color _getExpiryColor(int daysLeft) {
-    if (daysLeft < 0) return AppTheme.error;
-    if (daysLeft <= 30) return AppTheme.warning;
+  int _daysUntilExpiry(DateTime expiry) {
+    return expiry.difference(DateTime.now()).inDays;
+  }
+
+  Color _expiryColor(int days) {
+    if (days < 0) return AppTheme.error;
+    if (days <= 30) return AppTheme.warning;
     return AppTheme.success;
   }
 
-  String _getExpiryStatus(int daysLeft, String lang) {
-    if (daysLeft < 0) return _label('expired', lang);
-    if (daysLeft <= 30) return _label('expiring', lang);
+  String _expiryStatus(int days, String lang) {
+    if (days < 0) return _label('expired', lang);
+    if (days <= 30) return _label('expiring_soon', lang);
     return _label('good', lang);
-  }
-
-  IconData _getExpiryIcon(int daysLeft) {
-    if (daysLeft < 0) return Icons.error;
-    if (daysLeft <= 30) return Icons.warning_amber;
-    return Icons.check_circle;
-  }
-
-  Future<void> _addMedicine(String lang) async {
-    final nameController = TextEditingController();
-    DateTime? selectedDate;
-    await showDialog(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          backgroundColor: AppTheme.card,
-          title: Text(_label('add', lang),
-              style: const TextStyle(color: AppTheme.white, fontSize: 16)),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameController,
-                style: const TextStyle(color: AppTheme.white),
-                decoration: InputDecoration(
-                  labelText: _label('name', lang),
-                  labelStyle: const TextStyle(color: AppTheme.grey),
-                  enabledBorder: const UnderlineInputBorder(
-                      borderSide: BorderSide(color: AppTheme.grey)),
-                  focusedBorder: const UnderlineInputBorder(
-                      borderSide: BorderSide(color: AppTheme.accent)),
-                ),
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton.icon(
-                onPressed: () async {
-                  selectedDate = await showDatePicker(
-                    context: context,
-                    initialDate: DateTime.now(),
-                    firstDate: DateTime.now(),
-                    lastDate: DateTime(2030),
-                  );
-                  setDialogState(() {});
-                },
-                icon: const Icon(Icons.calendar_today),
-                label: Text(selectedDate != null
-                    ? selectedDate!.toString().split(' ')[0]
-                    : _label('expiry_date', lang)),
-                style:
-                    ElevatedButton.styleFrom(backgroundColor: AppTheme.accent),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text(_label('cancel', lang),
-                  style: const TextStyle(color: AppTheme.grey)),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                if (nameController.text.isNotEmpty && selectedDate != null) {
-                  final daysLeft =
-                      selectedDate!.difference(DateTime.now()).inDays;
-                  setState(() {
-                    _medicines.add({
-                      'name': nameController.text,
-                      'expiry': selectedDate!.toString().split(' ')[0],
-                      'daysLeft': daysLeft,
-                    });
-                  });
-                  Navigator.pop(context);
-                }
-              },
-              child: Text(_label('add', lang)),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   @override
   Widget build(BuildContext context) {
     final lang = context.watch<LanguageProvider>().language;
-    final expired = _medicines.where((m) => m['daysLeft'] < 0).toList();
-    final expiringSoon = _medicines
-        .where((m) => m['daysLeft'] >= 0 && m['daysLeft'] <= 30)
+    final now = DateTime.now();
+
+    final expired = _medicines
+        .where((m) => (m['expiry'] as DateTime).isBefore(now))
         .toList();
-    final good = _medicines.where((m) => m['daysLeft'] > 30).toList();
+    final expiringSoon = _medicines.where((m) {
+      final days = _daysUntilExpiry(m['expiry'] as DateTime);
+      return days >= 0 && days <= 30;
+    }).toList();
+    final good = _medicines
+        .where((m) => _daysUntilExpiry(m['expiry'] as DateTime) > 30)
+        .toList();
 
     return Scaffold(
       backgroundColor: AppTheme.background,
       appBar: AppBar(
         backgroundColor: AppTheme.background,
-        title: Text(_label('title', lang)),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppTheme.white),
           onPressed: () => context.go(AppRoutes.home),
         ),
+        title: Text(_label('title', lang),
+            style: const TextStyle(
+                color: AppTheme.white, fontWeight: FontWeight.bold)),
         actions: [
           IconButton(
-            onPressed: () => _addMedicine(lang),
-            icon: const Icon(Icons.add_circle, color: AppTheme.accent),
+            icon: const Icon(Icons.add, color: AppTheme.white),
+            onPressed: () => _showAddDialog(context, lang),
           ),
         ],
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(_label('subtitle', lang),
-                  style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: AppTheme.white)),
-              const SizedBox(height: 24),
-
-              // Summary
-              Row(
-                children: [
-                  _buildSummaryCard(_label('expired', lang),
-                      expired.length.toString(), AppTheme.error),
-                  const SizedBox(width: 12),
-                  _buildSummaryCard(_label('expiring', lang),
-                      expiringSoon.length.toString(), AppTheme.warning),
-                  const SizedBox(width: 12),
-                  _buildSummaryCard(_label('good', lang),
-                      good.length.toString(), AppTheme.success),
-                ],
-              ),
-              const SizedBox(height: 32),
-
-              if (expired.isNotEmpty) ...[
-                _buildSectionHeader(_label('expired', lang), AppTheme.error),
-                const SizedBox(height: 12),
-                ...expired.map((m) => _buildMedicineCard(m, lang)),
-                const SizedBox(height: 24),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                _summaryCard(_label('expired', lang), expired.length.toString(),
+                    AppTheme.error),
+                const SizedBox(width: 12),
+                _summaryCard(_label('expiring_soon', lang),
+                    expiringSoon.length.toString(), AppTheme.warning),
+                const SizedBox(width: 12),
+                _summaryCard(_label('good', lang), good.length.toString(),
+                    AppTheme.success),
               ],
-              if (expiringSoon.isNotEmpty) ...[
-                _buildSectionHeader(_label('expiring', lang), AppTheme.warning),
-                const SizedBox(height: 12),
-                ...expiringSoon.map((m) => _buildMedicineCard(m, lang)),
-                const SizedBox(height: 24),
-              ],
-              if (good.isNotEmpty) ...[
-                _buildSectionHeader(_label('good', lang), AppTheme.success),
-                const SizedBox(height: 12),
-                ...good.map((m) => _buildMedicineCard(m, lang)),
-              ],
-
-              const SizedBox(height: 24),
-              ElevatedButton.icon(
-                onPressed: () => _addMedicine(lang),
-                icon: const Icon(Icons.add),
-                label: Text(_label('add', lang)),
-              ),
+            ),
+            const SizedBox(height: 24),
+            if (expired.isNotEmpty) ...[
+              _sectionHeader(_label('expired', lang), AppTheme.error),
+              const SizedBox(height: 8),
+              ...expired.map((m) => _medicineCard(m, lang)),
+              const SizedBox(height: 16),
             ],
-          ),
+            if (expiringSoon.isNotEmpty) ...[
+              _sectionHeader(_label('expiring_soon', lang), AppTheme.warning),
+              const SizedBox(height: 8),
+              ...expiringSoon.map((m) => _medicineCard(m, lang)),
+              const SizedBox(height: 16),
+            ],
+            if (good.isNotEmpty) ...[
+              _sectionHeader(_label('good', lang), AppTheme.success),
+              const SizedBox(height: 8),
+              ...good.map((m) => _medicineCard(m, lang)),
+            ],
+          ],
         ),
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _showAddDialog(context, lang),
+        backgroundColor: AppTheme.accent,
+        icon: const Icon(Icons.add, color: AppTheme.white),
+        label: Text(_label('add', lang),
+            style: const TextStyle(color: AppTheme.white)),
       ),
     );
   }
 
-  Widget _buildSummaryCard(String label, String count, Color color) {
+  Widget _summaryCard(String label, String count, Color color) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.15),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: color.withOpacity(0.3)),
+          color: color.withValues(alpha: 0.15),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: color.withValues(alpha: 0.3)),
         ),
         child: Column(
           children: [
             Text(count,
                 style: TextStyle(
-                    fontSize: 28, fontWeight: FontWeight.bold, color: color)),
+                    color: color, fontSize: 24, fontWeight: FontWeight.bold)),
             const SizedBox(height: 4),
             Text(label,
-                style: TextStyle(fontSize: 11, color: color),
+                style: TextStyle(color: color, fontSize: 11),
                 textAlign: TextAlign.center),
           ],
         ),
@@ -286,27 +218,35 @@ class _ExpiryTrackerScreenState extends State<ExpiryTrackerScreen> {
     );
   }
 
-  Widget _buildSectionHeader(String title, Color color) {
+  Widget _sectionHeader(String title, Color color) {
     return Row(
       children: [
-        Container(width: 4, height: 20, color: color),
+        Container(
+            width: 4,
+            height: 20,
+            decoration: BoxDecoration(
+                color: color, borderRadius: BorderRadius.circular(2))),
         const SizedBox(width: 8),
         Text(title,
             style: TextStyle(
-                color: color, fontWeight: FontWeight.w600, fontSize: 15)),
+                color: color, fontSize: 16, fontWeight: FontWeight.bold)),
       ],
     );
   }
 
-  Widget _buildMedicineCard(Map<String, dynamic> medicine, String lang) {
-    final color = _getExpiryColor(medicine['daysLeft']);
+  Widget _medicineCard(Map<String, dynamic> medicine, String lang) {
+    final days = _daysUntilExpiry(medicine['expiry'] as DateTime);
+    final color = _expiryColor(days);
+    final status = _expiryStatus(days, lang);
+    final expiry = medicine['expiry'] as DateTime;
+
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppTheme.card,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Row(
         children: [
@@ -314,11 +254,12 @@ class _ExpiryTrackerScreenState extends State<ExpiryTrackerScreen> {
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-                color: color.withOpacity(0.15), shape: BoxShape.circle),
-            child: Icon(_getExpiryIcon(medicine['daysLeft']),
-                color: color, size: 24),
+              color: color.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(Icons.medication, color: color, size: 26),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -326,27 +267,105 @@ class _ExpiryTrackerScreenState extends State<ExpiryTrackerScreen> {
                 Text(medicine['name'],
                     style: const TextStyle(
                         color: AppTheme.white,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 16)),
-                Text('${medicine['expiry']}',
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15)),
+                Text(medicine['brand'],
                     style: const TextStyle(color: AppTheme.grey, fontSize: 13)),
-                Text(_getExpiryStatus(medicine['daysLeft'], lang),
-                    style: TextStyle(
-                        color: color,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500)),
+                const SizedBox(height: 4),
+                Text(
+                    '${_label('expires', lang)}: ${expiry.day}/${expiry.month}/${expiry.year}',
+                    style: const TextStyle(color: AppTheme.grey, fontSize: 12)),
               ],
             ),
           ),
-          Text(
-            medicine['daysLeft'] < 0
-                ? '${medicine['daysLeft'].abs()} ${_label('days_ago', lang)}'
-                : '${medicine['daysLeft']} ${_label('days_left', lang)}',
-            style: TextStyle(
-                color: color, fontWeight: FontWeight.bold, fontSize: 14),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(status,
+                    style: TextStyle(
+                        color: color,
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold)),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                days < 0
+                    ? '${days.abs()} ${_label('days_left', lang)}'
+                    : '$days ${_label('days_left', lang)}',
+                style: TextStyle(color: color, fontSize: 11),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showAddDialog(BuildContext context, String lang) {
+    final nameController = TextEditingController();
+    final brandController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppTheme.card,
+        title: Text(_label('add', lang),
+            style: const TextStyle(color: AppTheme.white)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: nameController,
+              style: const TextStyle(color: AppTheme.white),
+              decoration: const InputDecoration(
+                hintText: 'Medicine name',
+                hintStyle: TextStyle(color: AppTheme.grey),
+                enabledBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(color: AppTheme.grey)),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: brandController,
+              style: const TextStyle(color: AppTheme.white),
+              decoration: const InputDecoration(
+                hintText: 'Brand name',
+                hintStyle: TextStyle(color: AppTheme.grey),
+                enabledBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(color: AppTheme.grey)),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel', style: TextStyle(color: AppTheme.grey)),
+          ),
+          TextButton(
+            onPressed: () {
+              if (nameController.text.isNotEmpty) {
+                setState(() => _medicines.add({
+                      'name': nameController.text,
+                      'brand': brandController.text,
+                      'expiry': DateTime.now().add(const Duration(days: 365)),
+                      'quantity': 0,
+                    }));
+              }
+              Navigator.pop(ctx);
+            },
+            child: Text(_label('add', lang),
+                style: const TextStyle(color: AppTheme.accent)),
           ),
         ],
       ),
     );
   }
 }
+
+

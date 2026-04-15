@@ -1,9 +1,10 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import '../../../core/theme.dart';
-import '../../../core/routes.dart';
-import '../../../providers/language_provider.dart';
+import 'package:medilens/core/theme.dart';
+import 'package:medilens/core/routes.dart';
+import 'package:medilens/core/lang_text.dart';
+import 'package:medilens/providers/language_provider.dart';
 
 class PersonalDetailsScreen extends StatefulWidget {
   const PersonalDetailsScreen({super.key});
@@ -17,8 +18,8 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
   final _phoneController = TextEditingController();
   final _cityController = TextEditingController();
   int _age = 60;
-  String _gender = 'Male';
-  String _bloodGroup = 'A+';
+  String _gender = 'Female';
+  String _bloodGroup = 'B+';
 
   final List<String> _bloodGroups = [
     'A+',
@@ -31,13 +32,6 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
     'O-'
   ];
 
-  final List<Map<String, String>> _genders = [
-    {'en': 'Male', 'te': 'పురుషుడు', 'hi': 'पुरुष', 'ta': 'ஆண்'},
-    {'en': 'Female', 'te': 'స్త్రీ', 'hi': 'महिला', 'ta': 'பெண்'},
-    {'en': 'Other', 'te': 'ఇతర', 'hi': 'अन्य', 'ta': 'மற்றவர்'},
-  ];
-
-  // Labels for all 4 languages
   final Map<String, Map<String, String>> _labels = {
     'title': {
       'en': 'Personal Details',
@@ -45,11 +39,23 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
       'hi': 'व्यक्तिगत विवरण',
       'ta': 'தனிப்பட்ட விவரங்கள்'
     },
-    'subtitle': {
+    'sub': {
       'en': 'Tell us about yourself',
       'te': 'మీ గురించి చెప్పండి',
       'hi': 'अपने बारे में बताएं',
       'ta': 'உங்களைப் பற்றி சொல்லுங்கள்'
+    },
+    'photo': {
+      'en': '📷 Add Profile Photo',
+      'te': '📷 ప్రొఫైల్ ఫోటో జోడించండి',
+      'hi': '📷 प्रोफ़ाइल फ़ोटो जोड़ें',
+      'ta': '📷 சுயவிவர புகைப்படம் சேர்க்கவும்'
+    },
+    'photo_sub': {
+      'en': 'Optional · Helps caregivers identify you',
+      'te': 'ఐచ్ఛికం · సంరక్షకులకు గుర్తించడానికి సహాయం',
+      'hi': 'वैकल्पिक · देखभाल करने वालों को पहचानने में मदद',
+      'ta': 'விருப்பமானது · பராமரிப்பாளர்களுக்கு உதவும்'
     },
     'name': {
       'en': 'Full Name',
@@ -57,28 +63,41 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
       'hi': 'पूरा नाम',
       'ta': 'முழு பெயர்'
     },
+    'age': {'en': 'Age', 'te': 'వయసు', 'hi': 'आयु', 'ta': 'வயது'},
+    'gender': {'en': 'Gender', 'te': 'లింగం', 'hi': 'लिंग', 'ta': 'பாலினம்'},
     'phone': {
       'en': 'Phone Number',
       'te': 'ఫోన్ నంబర్',
       'hi': 'फ़ोन नंबर',
       'ta': 'தொலைபேசி எண்'
     },
-    'city': {'en': 'City', 'te': 'నగరం', 'hi': 'शहर', 'ta': 'நகரம்'},
-    'age': {'en': 'Age', 'te': 'వయసు', 'hi': 'आयु', 'ta': 'வயது'},
-    'years': {
-      'en': 'years',
-      'te': 'సంవత్సరాలు',
-      'hi': 'वर्ष',
-      'ta': 'ஆண்டுகள்'
+    'city': {
+      'en': 'City / Village',
+      'te': 'నగరం / గ్రామం',
+      'hi': 'शहर / गाँव',
+      'ta': 'நகரம் / கிராமம்'
     },
-    'gender': {'en': 'Gender', 'te': 'లింగం', 'hi': 'लिंग', 'ta': 'பாலினம்'},
     'blood': {
       'en': 'Blood Group',
       'te': 'రక్త వర్గం',
       'hi': 'रक्त समूह',
       'ta': 'இரத்த வகை'
     },
-    'next': {'en': 'Next', 'te': 'తదుపరి', 'hi': 'अगला', 'ta': 'அடுத்து'},
+    'continue': {
+      'en': 'Continue →',
+      'te': 'కొనసాగించు →',
+      'hi': 'जारी रखें →',
+      'ta': 'தொடர் →'
+    },
+    'step': {
+      'en': 'Step 2 of 5',
+      'te': 'దశ 2/5',
+      'hi': 'चरण 2/5',
+      'ta': 'படி 2/5'
+    },
+    'male': {'en': 'Male', 'te': 'పురుషుడు', 'hi': 'पुरुष', 'ta': 'ஆண்'},
+    'female': {'en': 'Female', 'te': 'స్త్రీ', 'hi': 'महिला', 'ta': 'பெண்'},
+    'other': {'en': 'Other', 'te': 'ఇతర', 'hi': 'अन्य', 'ta': 'மற்றவர்'},
   };
 
   String _label(String key, String lang) =>
@@ -95,194 +114,360 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
   @override
   Widget build(BuildContext context) {
     final lang = context.watch<LanguageProvider>().language;
-
+    final font = LanguageProvider.getFontFamily(lang);
     return Scaffold(
       backgroundColor: AppTheme.background,
-      appBar: AppBar(
-        title: Text(_label('title', lang)),
-        backgroundColor: AppTheme.background,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppTheme.white),
-          onPressed: () => context.go(AppRoutes.welcome),
-        ),
-      ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(_label('subtitle', lang),
-                  style: const TextStyle(fontSize: 14, color: AppTheme.teal)),
-              const SizedBox(height: 4),
-              Text(_label('title', lang),
-                  style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: AppTheme.white)),
-              const SizedBox(height: 32),
-
-              _buildTextField(
-                  _nameController, _label('name', lang), Icons.person),
-              const SizedBox(height: 16),
-              _buildTextField(
-                  _phoneController, _label('phone', lang), Icons.phone,
-                  isPhone: true),
-              const SizedBox(height: 16),
-              _buildTextField(
-                  _cityController, _label('city', lang), Icons.location_city),
-              const SizedBox(height: 24),
-
-              // Age
-              Text(_label('age', lang),
-                  style: const TextStyle(color: AppTheme.grey, fontSize: 14)),
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                    color: AppTheme.card,
-                    borderRadius: BorderRadius.circular(16)),
-                child: Row(
+        child: Column(
+          children: [
+            _progressDots(1),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(14, 8, 14, 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    IconButton(
-                      onPressed: () => setState(() {
-                        if (_age > 1) _age--;
-                      }),
-                      icon: const Icon(Icons.remove_circle,
-                          color: AppTheme.accent, size: 32),
+                    Row(
+                      children: [
+                        GestureDetector(
+                          onTap: () => context.go(AppRoutes.welcome),
+                          child: Container(
+                            width: 30,
+                            height: 30,
+                            decoration: BoxDecoration(
+                              color: AppTheme.card,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(Icons.arrow_back,
+                                color: AppTheme.white, size: 18),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            LangText(_label('title', lang), lang,
+                                fontSize: 16, fontWeight: FontWeight.bold),
+                            LangText(_label('sub', lang), lang,
+                                fontSize: 12, color: AppTheme.grey),
+                          ],
+                        ),
+                      ],
                     ),
-                    Expanded(
-                      child: Text(
-                        '$_age ${_label('years', lang)}',
-                        style: const TextStyle(
-                            fontSize: 18,
-                            color: AppTheme.white,
-                            fontWeight: FontWeight.bold),
-                        textAlign: TextAlign.center,
+                    const SizedBox(height: 16),
+                    // Photo area
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: AppTheme.card,
+                        borderRadius: BorderRadius.circular(13),
+                        border: Border.all(
+                          color: AppTheme.grey.withValues(alpha: 0.2),
+                          style: BorderStyle.solid,
+                        ),
+                      ),
+                      child: Column(
+                        children: [
+                          Container(
+                            width: 56,
+                            height: 56,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: const LinearGradient(
+                                colors: [AppTheme.accent, AppTheme.teal],
+                              ),
+                            ),
+                            child: const Icon(Icons.person,
+                                color: AppTheme.white, size: 30),
+                          ),
+                          const SizedBox(height: 8),
+                          LangText(_label('photo', lang), lang,
+                              fontSize: 13,
+                              color: AppTheme.accent,
+                              fontWeight: FontWeight.w600),
+                          const SizedBox(height: 2),
+                          LangText(_label('photo_sub', lang), lang,
+                              fontSize: 11, color: AppTheme.grey),
+                        ],
                       ),
                     ),
-                    IconButton(
-                      onPressed: () => setState(() {
-                        if (_age < 120) _age++;
-                      }),
-                      icon: const Icon(Icons.add_circle,
-                          color: AppTheme.accent, size: 32),
+                    const SizedBox(height: 12),
+                    // Name
+                    _inputField(_nameController, _label('name', lang),
+                        Icons.person, font,
+                        isRequired: true),
+                    const SizedBox(height: 10),
+                    // Age and Gender row
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              LangText(_label('age', lang), lang,
+                                  fontSize: 11,
+                                  color: AppTheme.grey,
+                                  fontWeight: FontWeight.w600),
+                              const SizedBox(height: 4),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 10),
+                                decoration: BoxDecoration(
+                                  color: AppTheme.card,
+                                  borderRadius: BorderRadius.circular(11),
+                                  border: Border.all(
+                                      color:
+                                          AppTheme.teal.withValues(alpha: 0.5)),
+                                ),
+                                child: Row(
+                                  children: [
+                                    GestureDetector(
+                                      onTap: () => setState(() {
+                                        if (_age > 1) _age--;
+                                      }),
+                                      child: const Icon(Icons.remove,
+                                          color: AppTheme.accent, size: 18),
+                                    ),
+                                    Expanded(
+                                      child: Text('$_age',
+                                          textAlign: TextAlign.center,
+                                          style: const TextStyle(
+                                              color: AppTheme.white,
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.bold)),
+                                    ),
+                                    GestureDetector(
+                                      onTap: () => setState(() {
+                                        if (_age < 120) _age++;
+                                      }),
+                                      child: const Icon(Icons.add,
+                                          color: AppTheme.accent, size: 18),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              LangText(_label('gender', lang), lang,
+                                  fontSize: 11,
+                                  color: AppTheme.grey,
+                                  fontWeight: FontWeight.w600),
+                              const SizedBox(height: 4),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 10),
+                                decoration: BoxDecoration(
+                                  color: AppTheme.card,
+                                  borderRadius: BorderRadius.circular(11),
+                                  border: Border.all(
+                                      color:
+                                          AppTheme.teal.withValues(alpha: 0.5)),
+                                ),
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.people,
+                                        color: AppTheme.accent, size: 18),
+                                    const SizedBox(width: 6),
+                                    Expanded(
+                                      child: LangText(
+                                          _label(_gender.toLowerCase(), lang),
+                                          lang,
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w500),
+                                    ),
+                                    const Icon(Icons.check,
+                                        color: AppTheme.teal, size: 14),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Gender
-              Text(_label('gender', lang),
-                  style: const TextStyle(color: AppTheme.grey, fontSize: 14)),
-              const SizedBox(height: 8),
-              Row(
-                children: _genders
-                    .map((g) => Expanded(
+                    const SizedBox(height: 10),
+                    // Gender buttons
+                    Row(
+                      children: ['male', 'female', 'other'].map((g) {
+                        final isSelected = _gender.toLowerCase() == g;
+                        return Expanded(
                           child: Padding(
-                            padding: const EdgeInsets.only(right: 8),
+                            padding: const EdgeInsets.only(right: 6),
                             child: GestureDetector(
-                              onTap: () => setState(() => _gender = g['en']!),
+                              onTap: () => setState(() => _gender =
+                                  g[0].toUpperCase() + g.substring(1)),
                               child: Container(
                                 padding:
-                                    const EdgeInsets.symmetric(vertical: 12),
+                                    const EdgeInsets.symmetric(vertical: 8),
                                 decoration: BoxDecoration(
-                                  color: _gender == g['en']
+                                  color: isSelected
                                       ? AppTheme.accent
                                       : AppTheme.card,
-                                  borderRadius: BorderRadius.circular(12),
+                                  borderRadius: BorderRadius.circular(8),
                                 ),
-                                child: Column(
-                                  children: [
-                                    Text(g['en']!,
-                                        textAlign: TextAlign.center,
-                                        style: TextStyle(
-                                          color: _gender == g['en']
-                                              ? AppTheme.white
-                                              : AppTheme.grey,
-                                          fontWeight: FontWeight.w500,
-                                          fontSize: 13,
-                                        )),
-                                    Text(g[lang] ?? g['te']!,
-                                        textAlign: TextAlign.center,
-                                        style: TextStyle(
-                                          color: _gender == g['en']
-                                              ? AppTheme.white.withOpacity(0.8)
-                                              : AppTheme.grey.withOpacity(0.6),
-                                          fontSize: 11,
-                                        )),
-                                  ],
+                                child: Center(
+                                  child: LangText(_label(g, lang), lang,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      color: isSelected
+                                          ? AppTheme.white
+                                          : AppTheme.grey),
                                 ),
                               ),
                             ),
                           ),
-                        ))
-                    .toList(),
-              ),
-              const SizedBox(height: 16),
-
-              // Blood Group
-              Text(_label('blood', lang),
-                  style: const TextStyle(color: AppTheme.grey, fontSize: 14)),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: _bloodGroups
-                    .map((bg) => GestureDetector(
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 10),
+                    _inputField(_phoneController, _label('phone', lang),
+                        Icons.phone, font,
+                        isPhone: true, isRequired: true),
+                    const SizedBox(height: 10),
+                    _inputField(_cityController, _label('city', lang),
+                        Icons.location_on, font),
+                    const SizedBox(height: 10),
+                    // Blood Group
+                    LangText(_label('blood', lang), lang,
+                        fontSize: 11,
+                        color: AppTheme.grey,
+                        fontWeight: FontWeight.w600),
+                    const SizedBox(height: 6),
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      children: _bloodGroups.map((bg) {
+                        final isSelected = _bloodGroup == bg;
+                        return GestureDetector(
                           onTap: () => setState(() => _bloodGroup = bg),
                           child: Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 10),
+                                horizontal: 14, vertical: 8),
                             decoration: BoxDecoration(
-                              color: _bloodGroup == bg
-                                  ? AppTheme.accent
-                                  : AppTheme.card,
-                              borderRadius: BorderRadius.circular(10),
+                              color:
+                                  isSelected ? AppTheme.accent : AppTheme.card,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                  color: isSelected
+                                      ? AppTheme.accent
+                                      : AppTheme.grey.withValues(alpha: 0.2)),
                             ),
                             child: Text(bg,
                                 style: TextStyle(
-                                  color: _bloodGroup == bg
-                                      ? AppTheme.white
-                                      : AppTheme.grey,
-                                  fontWeight: FontWeight.w600,
-                                )),
+                                    color: isSelected
+                                        ? AppTheme.white
+                                        : AppTheme.grey,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 13)),
                           ),
-                        ))
-                    .toList(),
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 20),
+                    // Continue button
+                    GestureDetector(
+                      onTap: () => context.go(AppRoutes.healthProfile),
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                              colors: [AppTheme.accent, AppTheme.teal]),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Center(
+                          child: LangText(_label('continue', lang), lang,
+                              fontSize: 16, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Center(
+                      child: LangText(_label('step', lang), lang,
+                          fontSize: 12, color: AppTheme.grey),
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(height: 40),
-
-              ElevatedButton(
-                onPressed: () => context.go(AppRoutes.healthProfile),
-                child: Text(_label('next', lang)),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildTextField(
-      TextEditingController controller, String label, IconData icon,
-      {bool isPhone = false}) {
-    return Container(
-      decoration: BoxDecoration(
-          color: AppTheme.card, borderRadius: BorderRadius.circular(16)),
-      child: TextField(
-        controller: controller,
-        keyboardType: isPhone ? TextInputType.phone : TextInputType.text,
-        style: const TextStyle(color: AppTheme.white, fontSize: 16),
-        decoration: InputDecoration(
-          labelText: label,
-          labelStyle: const TextStyle(color: AppTheme.grey),
-          prefixIcon: Icon(icon, color: AppTheme.accent),
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.all(16),
-        ),
+  Widget _progressDots(int active) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(14, 8, 14, 4),
+      child: Row(
+        children: List.generate(
+            5,
+            (i) => Expanded(
+                  flex: i == active ? 2 : 1,
+                  child: Container(
+                    height: 4,
+                    margin: const EdgeInsets.only(right: 4),
+                    decoration: BoxDecoration(
+                      color: i < active
+                          ? AppTheme.teal
+                          : i == active
+                              ? AppTheme.accent
+                              : AppTheme.card,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                )),
       ),
+    );
+  }
+
+  Widget _inputField(TextEditingController controller, String label,
+      IconData icon, String font,
+      {bool isPhone = false, bool isRequired = false}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            LangText(label, font,
+                fontSize: 11,
+                color: AppTheme.grey,
+                fontWeight: FontWeight.w600),
+            if (isRequired)
+              const Text(' *',
+                  style: TextStyle(color: AppTheme.error, fontSize: 11)),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Container(
+          decoration: BoxDecoration(
+            color: AppTheme.card,
+            borderRadius: BorderRadius.circular(11),
+            border: Border.all(color: AppTheme.teal.withValues(alpha: 0.5)),
+          ),
+          child: TextField(
+            controller: controller,
+            keyboardType: isPhone ? TextInputType.phone : TextInputType.text,
+            style: TextStyle(
+                fontFamily: font, color: AppTheme.white, fontSize: 14),
+            decoration: InputDecoration(
+              prefixIcon: Icon(icon, color: AppTheme.accent, size: 20),
+              border: InputBorder.none,
+              contentPadding:
+                  const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+              suffixIcon:
+                  const Icon(Icons.check, color: AppTheme.teal, size: 16),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
