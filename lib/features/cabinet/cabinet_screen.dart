@@ -14,44 +14,7 @@ class CabinetScreen extends StatefulWidget {
 }
 
 class _CabinetScreenState extends State<CabinetScreen> {
-  final List<Map<String, dynamic>> _medicines = [
-    {
-      'name': 'Paracetamol',
-      'generic': 'Acetaminophen',
-      'strength': '500mg',
-      'type': 'Tablet',
-      'quantity': 10
-    },
-    {
-      'name': 'Metformin',
-      'generic': 'Metformin HCl',
-      'strength': '500mg',
-      'type': 'Tablet',
-      'quantity': 30
-    },
-    {
-      'name': 'Amlodipine',
-      'generic': 'Amlodipine Besylate',
-      'strength': '5mg',
-      'type': 'Tablet',
-      'quantity': 15
-    },
-    {
-      'name': 'Omeprazole',
-      'generic': 'Omeprazole',
-      'strength': '20mg',
-      'type': 'Capsule',
-      'quantity': 20
-    },
-    {
-      'name': 'Atorvastatin',
-      'generic': 'Atorvastatin Calcium',
-      'strength': '10mg',
-      'type': 'Tablet',
-      'quantity': 25
-    },
-  ];
-
+  final List<Map<String, dynamic>> _medicines = [];
   String _searchQuery = '';
 
   final Map<String, Map<String, String>> _labels = {
@@ -68,10 +31,11 @@ class _CabinetScreenState extends State<CabinetScreen> {
       'ta': 'மருந்துகளை தேடுங்கள்...'
     },
     'empty': {
-      'en': 'No medicines saved yet',
-      'te': 'ఇంకా మందులు సేవ్ చేయలేదు',
-      'hi': 'अभी कोई दवा सहेजी नहीं',
-      'ta': 'இன்னும் மருந்துகள் சேமிக்கப்படவில்லை'
+      'en': 'No medicines saved yet.\nScan a medicine to add it here.',
+      'te': 'ఇంకా మందులు సేవ్ చేయలేదు.\nమందు స్కాన్ చేసి ఇక్కడ జోడించండి.',
+      'hi': 'अभी कोई दवा सहेजी नहीं।\nदवा स्कैन करके यहाँ जोड़ें।',
+      'ta':
+          'இன்னும் மருந்துகள் சேமிக்கப்படவில்லை.\nமருந்தை ஸ்கேன் செய்து இங்கே சேர்க்கவும்.'
     },
     'total': {
       'en': 'Total Medicines',
@@ -87,7 +51,12 @@ class _CabinetScreenState extends State<CabinetScreen> {
       'hi': 'रिमाइंडर सेट करें',
       'ta': 'நினைவூட்டல் அமைக்கவும்'
     },
-    'add': {'en': 'Add', 'te': 'జోడించు', 'hi': 'जोड़ें', 'ta': 'சேர்'},
+    'add': {
+      'en': 'Scan to Add',
+      'te': 'జోడించడానికి స్కాన్ చేయండి',
+      'hi': 'जोड़ने के लिए स्कैन करें',
+      'ta': 'சேர்க்க ஸ்கேன் செய்யுங்கள்'
+    },
   };
 
   String _label(String key, String lang) =>
@@ -174,7 +143,7 @@ class _CabinetScreenState extends State<CabinetScreen> {
                                   color: AppTheme.white, size: 18),
                               const SizedBox(width: 4),
                               LangText(_label('add', lang), lang,
-                                  fontSize: 13, fontWeight: FontWeight.bold),
+                                  fontSize: 12, fontWeight: FontWeight.bold),
                             ],
                           ),
                         ),
@@ -207,8 +176,41 @@ class _CabinetScreenState extends State<CabinetScreen> {
           Expanded(
             child: _filteredMedicines.isEmpty
                 ? Center(
-                    child: LangText(_label('empty', lang), lang,
-                        fontSize: 16, color: AppTheme.grey),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.medical_services,
+                            color: AppTheme.grey, size: 64),
+                        const SizedBox(height: 16),
+                        LangText(_label('empty', lang), lang,
+                            fontSize: 15,
+                            color: AppTheme.grey,
+                            textAlign: TextAlign.center),
+                        const SizedBox(height: 24),
+                        GestureDetector(
+                          onTap: () => context.go(AppRoutes.scan),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 24, vertical: 12),
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                  colors: [AppTheme.accent, AppTheme.teal]),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.camera_alt,
+                                    color: AppTheme.white, size: 20),
+                                const SizedBox(width: 8),
+                                LangText(_label('add', lang), lang,
+                                    fontSize: 14, fontWeight: FontWeight.bold),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   )
                 : ListView.builder(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -258,9 +260,6 @@ class _CabinetScreenState extends State<CabinetScreen> {
                     _chip(medicine['strength'], AppTheme.accent),
                     const SizedBox(width: 6),
                     _chip(medicine['type'], AppTheme.teal),
-                    const SizedBox(width: 6),
-                    _chip('${_label('qty', lang)}: ${medicine['quantity']}',
-                        AppTheme.grey),
                   ],
                 ),
               ],

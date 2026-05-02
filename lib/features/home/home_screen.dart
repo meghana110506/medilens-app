@@ -51,10 +51,10 @@ class _HomeScreenState extends State<HomeScreen> {
       'ta': 'மருந்து பெட்டி'
     },
     'cabinet_sub': {
-      'en': '5 saved',
-      'te': '5 సేవ్ చేయబడ్డాయి',
-      'hi': '5 सहेजी गई',
-      'ta': '5 சேமிக்கப்பட்டது'
+      'en': '0 saved',
+      'te': '0 సేవ్ చేయబడ్డాయి',
+      'hi': '0 सहेजी गई',
+      'ta': '0 சேமிக்கப்பட்டது'
     },
     'reminders': {
       'en': 'My Reminders',
@@ -63,10 +63,10 @@ class _HomeScreenState extends State<HomeScreen> {
       'ta': 'என் நினைவூட்டல்கள்'
     },
     'reminders_sub': {
-      'en': '3 due today',
-      'te': 'ఈరోజు 3 ఉన్నాయి',
-      'hi': 'आज 3 बकाया',
-      'ta': 'இன்று 3 உள்ளன'
+      'en': '0 due today',
+      'te': 'ఈరోజు 0 ఉన్నాయి',
+      'hi': 'आज 0 बकाया',
+      'ta': 'இன்று 0 உள்ளன'
     },
     'expiry': {
       'en': 'Expiry Tracker',
@@ -75,10 +75,10 @@ class _HomeScreenState extends State<HomeScreen> {
       'ta': 'காலாவதி கண்காணிப்பு'
     },
     'expiry_sub': {
-      'en': '2 expiring soon',
-      'te': '2 త్వరలో గడువు',
-      'hi': '2 जल्द समाप्त',
-      'ta': '2 விரைவில் காலாவதி'
+      'en': '0 expiring soon',
+      'te': '0 త్వరలో గడువు',
+      'hi': '0 जल्द समाप्त',
+      'ta': '0 விரைவில் காலாவதி'
     },
     'interaction': {
       'en': 'Drug Interaction',
@@ -91,12 +91,6 @@ class _HomeScreenState extends State<HomeScreen> {
       'te': 'అనుకూలత తనిఖీ',
       'hi': 'अनुकूलता जांचें',
       'ta': 'இணக்கம் சரிபார்'
-    },
-    'today_schedule': {
-      'en': 'Today\'s Schedule',
-      'te': 'ఈరోజు షెడ్యూల్',
-      'hi': 'आज का कार्यक्रम',
-      'ta': 'இன்றைய அட்டவணை'
     },
     'tip': {
       'en': 'Daily Tip',
@@ -128,7 +122,7 @@ class _HomeScreenState extends State<HomeScreen> {
     'nav_settings': {
       'en': 'Settings',
       'te': 'సెట్టింగులు',
-      'hi': 'सेटिंग्स',
+      'hi': 'सेटिंग்స',
       'ta': 'அமைப்புகள்'
     },
   };
@@ -138,8 +132,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final lang = context.watch<LanguageProvider>().language;
+    final provider = context.watch<LanguageProvider>();
+    final lang = provider.language;
     final font = LanguageProvider.getFontFamily(lang);
+    final fontSize = provider.fontSize;
+
     return Scaffold(
       backgroundColor: AppTheme.background,
       body: Stack(
@@ -147,7 +144,6 @@ class _HomeScreenState extends State<HomeScreen> {
           SafeArea(
             child: Column(
               children: [
-                // App bar
                 Padding(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -164,9 +160,9 @@ class _HomeScreenState extends State<HomeScreen> {
                             color: AppTheme.accent, size: 22),
                       ),
                       const SizedBox(width: 10),
-                      const Text('MediLens',
+                      Text('MediLens',
                           style: TextStyle(
-                              fontSize: 20,
+                              fontSize: fontSize + 2,
                               fontWeight: FontWeight.bold,
                               color: AppTheme.white)),
                       const Spacer(),
@@ -214,21 +210,21 @@ class _HomeScreenState extends State<HomeScreen> {
                                     style: TextStyle(
                                         fontFamily: font,
                                         color: AppTheme.accent,
-                                        fontSize: 11,
+                                        fontSize: fontSize - 3,
                                         fontWeight: FontWeight.w600)),
                               ),
                               const SizedBox(height: 6),
                               Text(_label('banner_title', lang),
                                   style: TextStyle(
                                       fontFamily: font,
-                                      fontSize: 15,
+                                      fontSize: fontSize,
                                       fontWeight: FontWeight.bold,
                                       color: AppTheme.white)),
                               const SizedBox(height: 3),
                               Text(_label('banner_sub', lang),
                                   style: TextStyle(
                                       fontFamily: font,
-                                      fontSize: 12,
+                                      fontSize: fontSize - 3,
                                       color: AppTheme.grey)),
                             ],
                           ),
@@ -265,7 +261,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                       style: TextStyle(
                                           fontFamily: font,
                                           color: AppTheme.white,
-                                          fontSize: 11,
+                                          fontSize: fontSize - 5,
                                           fontWeight: FontWeight.bold)),
                                 ],
                               ),
@@ -295,6 +291,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   title: _label('cabinet', lang),
                                   subtitle: _label('cabinet_sub', lang),
                                   lang: lang,
+                                  fontSize: fontSize,
                                   onTap: () => context.go(AppRoutes.cabinet)),
                               const SizedBox(width: 8),
                               _quickCard(
@@ -303,6 +300,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   title: _label('reminders', lang),
                                   subtitle: _label('reminders_sub', lang),
                                   lang: lang,
+                                  fontSize: fontSize,
                                   onTap: () => context.go(AppRoutes.reminders)),
                             ],
                           ),
@@ -319,6 +317,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   title: _label('expiry', lang),
                                   subtitle: _label('expiry_sub', lang),
                                   lang: lang,
+                                  fontSize: fontSize,
                                   onTap: () =>
                                       context.go(AppRoutes.expiryTracker)),
                               const SizedBox(width: 8),
@@ -328,29 +327,12 @@ class _HomeScreenState extends State<HomeScreen> {
                                   title: _label('interaction', lang),
                                   subtitle: _label('interaction_sub', lang),
                                   lang: lang,
+                                  fontSize: fontSize,
                                   onTap: () =>
                                       context.go(AppRoutes.interactionChecker)),
                             ],
                           ),
                         ),
-                        const SizedBox(height: 12),
-                        // Today's schedule
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(14, 4, 14, 8),
-                          child: Text(_label('today_schedule', lang),
-                              style: TextStyle(
-                                  fontFamily: font,
-                                  color: AppTheme.grey,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                  letterSpacing: 0.8)),
-                        ),
-                        _scheduleItem('8:00', 'Metformin 500mg',
-                            '1 tab · After food', AppTheme.warning),
-                        _scheduleItem('2:00', 'Amlodipine 5mg',
-                            '1 tab · With water', AppTheme.success),
-                        _scheduleItem('9:00', 'Atorvastatin 10mg',
-                            '1 tab · Before bed', AppTheme.grey),
                         const SizedBox(height: 12),
                         // Daily tip
                         Container(
@@ -376,14 +358,14 @@ class _HomeScreenState extends State<HomeScreen> {
                                         style: TextStyle(
                                             fontFamily: font,
                                             color: AppTheme.warning,
-                                            fontSize: 12,
+                                            fontSize: fontSize - 2,
                                             fontWeight: FontWeight.bold)),
                                     const SizedBox(height: 4),
                                     Text(_label('tip_text', lang),
                                         style: TextStyle(
                                             fontFamily: font,
                                             color: AppTheme.grey,
-                                            fontSize: 12)),
+                                            fontSize: fontSize - 3)),
                                   ],
                                 ),
                               ),
@@ -419,62 +401,25 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  _navItem(
-                      Icons.home, _label('nav_home', lang), true, null, font),
+                  _navItem(Icons.home, _label('nav_home', lang), true, null,
+                      font, fontSize),
                   _navItem(Icons.qr_code_scanner, _label('nav_scan', lang),
-                      false, () => context.go(AppRoutes.scan), font),
-                  _navItem(Icons.medical_services, _label('nav_cabinet', lang),
-                      false, () => context.go(AppRoutes.cabinet), font),
+                      false, () => context.go(AppRoutes.scan), font, fontSize),
+                  _navItem(
+                      Icons.medical_services,
+                      _label('nav_cabinet', lang),
+                      false,
+                      () => context.go(AppRoutes.cabinet),
+                      font,
+                      fontSize),
                   _navItem(Icons.alarm, _label('nav_reminders', lang), false,
-                      () => context.go(AppRoutes.reminders), font),
+                      () => context.go(AppRoutes.reminders), font, fontSize),
                   _navItem(Icons.settings, _label('nav_settings', lang), false,
-                      () => context.go(AppRoutes.settings), font),
+                      () => context.go(AppRoutes.settings), font, fontSize),
                 ],
               ),
             ),
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _scheduleItem(
-      String time, String medicine, String note, Color dotColor) {
-    return Container(
-      margin: const EdgeInsets.fromLTRB(12, 0, 12, 6),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: AppTheme.card,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppTheme.grey.withValues(alpha: 0.15)),
-      ),
-      child: Row(
-        children: [
-          Text(time,
-              style: const TextStyle(
-                  color: AppTheme.accent,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14)),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(medicine,
-                    style: const TextStyle(
-                        color: AppTheme.white,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 13)),
-                Text(note,
-                    style: const TextStyle(color: AppTheme.grey, fontSize: 11)),
-              ],
-            ),
-          ),
-          Container(
-              width: 8,
-              height: 8,
-              decoration:
-                  BoxDecoration(shape: BoxShape.circle, color: dotColor)),
         ],
       ),
     );
@@ -486,6 +431,7 @@ class _HomeScreenState extends State<HomeScreen> {
       required String title,
       required String subtitle,
       required String lang,
+      required double fontSize,
       required VoidCallback onTap}) {
     return Expanded(
       child: GestureDetector(
@@ -515,14 +461,14 @@ class _HomeScreenState extends State<HomeScreen> {
                   style: TextStyle(
                       fontFamily: LanguageProvider.getFontFamily(lang),
                       color: AppTheme.white,
-                      fontSize: 13,
+                      fontSize: fontSize - 2,
                       fontWeight: FontWeight.w600)),
               const SizedBox(height: 2),
               Text(subtitle,
                   style: TextStyle(
                       fontFamily: LanguageProvider.getFontFamily(lang),
                       color: AppTheme.grey,
-                      fontSize: 11)),
+                      fontSize: fontSize - 4)),
             ],
           ),
         ),
@@ -531,7 +477,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _navItem(IconData icon, String label, bool isActive,
-      VoidCallback? onTap, String font) {
+      VoidCallback? onTap, String font, double fontSize) {
     return GestureDetector(
       onTap: onTap,
       child: Padding(

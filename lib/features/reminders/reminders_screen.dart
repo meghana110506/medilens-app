@@ -14,40 +14,7 @@ class RemindersScreen extends StatefulWidget {
 }
 
 class _RemindersScreenState extends State<RemindersScreen> {
-  final List<Map<String, dynamic>> _reminders = [
-    {
-      'medicine': 'Metformin',
-      'time': '08:00 AM',
-      'dose': '500mg',
-      'days': ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-      'enabled': true,
-      'taken': false
-    },
-    {
-      'medicine': 'Amlodipine',
-      'time': '09:00 AM',
-      'dose': '5mg',
-      'days': ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-      'enabled': true,
-      'taken': true
-    },
-    {
-      'medicine': 'Atorvastatin',
-      'time': '09:00 PM',
-      'dose': '10mg',
-      'days': ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-      'enabled': false,
-      'taken': false
-    },
-    {
-      'medicine': 'Aspirin',
-      'time': '08:00 AM',
-      'dose': '75mg',
-      'days': ['Mon', 'Wed', 'Fri'],
-      'enabled': true,
-      'taken': false
-    },
-  ];
+  final List<Map<String, dynamic>> _reminders = [];
 
   int _selectedTab = 0;
 

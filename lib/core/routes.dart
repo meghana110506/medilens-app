@@ -10,15 +10,15 @@ import 'package:medilens/features/home/home_screen.dart';
 import 'package:medilens/features/scan/scan_screen.dart';
 import 'package:medilens/features/processing/processing_screen.dart';
 import 'package:medilens/features/medicine_info/medicine_info_screen.dart';
-import 'package:medilens/features/interaction_checker/interaction_checker_screen.dart';
-import 'package:medilens/features/expiry_tracker/expiry_tracker_screen.dart';
-import 'package:medilens/features/reminders/reminders_screen.dart';
 import 'package:medilens/features/cabinet/cabinet_screen.dart';
+import 'package:medilens/features/reminders/reminders_screen.dart';
+import 'package:medilens/features/expiry_tracker/expiry_tracker_screen.dart';
+import 'package:medilens/features/interaction_checker/interaction_checker_screen.dart';
 import 'package:medilens/features/sos/sos_screen.dart';
 import 'package:medilens/features/settings/settings_screen.dart';
 
 class AppRoutes {
-  static const String setup = '/setup';
+  static const String setup = '/';
   static const String welcome = '/welcome';
   static const String personalDetails = '/personal-details';
   static const String healthProfile = '/health-profile';
@@ -29,35 +29,56 @@ class AppRoutes {
   static const String scan = '/scan';
   static const String processing = '/processing';
   static const String medicineInfo = '/medicine-info';
-  static const String interactionChecker = '/interaction-checker';
-  static const String expiryTracker = '/expiry-tracker';
-  static const String reminders = '/reminders';
   static const String cabinet = '/cabinet';
+  static const String reminders = '/reminders';
+  static const String expiryTracker = '/expiry-tracker';
+  static const String interactionChecker = '/interaction-checker';
   static const String sos = '/sos';
   static const String settings = '/settings';
 
-  static final GoRouter router = GoRouter(
+  static final router = GoRouter(
     initialLocation: setup,
     routes: [
-      GoRoute(path: setup, builder: (context, state) => const SetupScreen()),
-      GoRoute(path: welcome, builder: (context, state) => const WelcomeScreen()),
-      GoRoute(path: personalDetails, builder: (context, state) => const PersonalDetailsScreen()),
-      GoRoute(path: healthProfile, builder: (context, state) => const HealthProfileScreen()),
-      GoRoute(path: caregiverSetup, builder: (context, state) => const CaregiverSetupScreen()),
-      GoRoute(path: accessibility, builder: (context, state) => const AccessibilityScreen()),
-      GoRoute(path: allSet, builder: (context, state) => const AllSetScreen()),
-      GoRoute(path: home, builder: (context, state) => const HomeScreen()),
-      GoRoute(path: scan, builder: (context, state) => const ScanScreen()),
-      GoRoute(path: processing, builder: (context, state) => const ProcessingScreen()),
-      GoRoute(path: medicineInfo, builder: (context, state) => const MedicineInfoScreen()),
-      GoRoute(path: interactionChecker, builder: (context, state) => const InteractionCheckerScreen()),
-      GoRoute(path: expiryTracker, builder: (context, state) => const ExpiryTrackerScreen()),
-      GoRoute(path: reminders, builder: (context, state) => const RemindersScreen()),
-      GoRoute(path: cabinet, builder: (context, state) => const CabinetScreen()),
-      GoRoute(path: sos, builder: (context, state) => const SosScreen()),
-      GoRoute(path: settings, builder: (context, state) => const SettingsScreen()),
+      GoRoute(path: setup, builder: (ctx, state) => const SetupScreen()),
+      GoRoute(path: welcome, builder: (ctx, state) => const WelcomeScreen()),
+      GoRoute(
+          path: personalDetails,
+          builder: (ctx, state) => const PersonalDetailsScreen()),
+      GoRoute(
+          path: healthProfile,
+          builder: (ctx, state) => const HealthProfileScreen()),
+      GoRoute(
+          path: caregiverSetup,
+          builder: (ctx, state) => const CaregiverSetupScreen()),
+      GoRoute(
+          path: accessibility,
+          builder: (ctx, state) => const AccessibilityScreen()),
+      GoRoute(path: allSet, builder: (ctx, state) => const AllSetScreen()),
+      GoRoute(path: home, builder: (ctx, state) => const HomeScreen()),
+      GoRoute(path: scan, builder: (ctx, state) => const ScanScreen()),
+      GoRoute(
+        path: processing,
+        builder: (ctx, state) => ProcessingScreen(
+          scannedText: state.extra as String?,
+        ),
+      ),
+      GoRoute(
+        path: medicineInfo,
+        builder: (ctx, state) => MedicineInfoScreen(
+          medicineData: state.extra as Map<String, dynamic>?,
+        ),
+      ),
+      GoRoute(path: cabinet, builder: (ctx, state) => const CabinetScreen()),
+      GoRoute(
+          path: reminders, builder: (ctx, state) => const RemindersScreen()),
+      GoRoute(
+          path: expiryTracker,
+          builder: (ctx, state) => const ExpiryTrackerScreen()),
+      GoRoute(
+          path: interactionChecker,
+          builder: (ctx, state) => const InteractionCheckerScreen()),
+      GoRoute(path: sos, builder: (ctx, state) => const SosScreen()),
+      GoRoute(path: settings, builder: (ctx, state) => const SettingsScreen()),
     ],
   );
 }
-
-

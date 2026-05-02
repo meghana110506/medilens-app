@@ -20,6 +20,17 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
   int _age = 60;
   String _gender = 'Female';
   String _bloodGroup = 'B+';
+  Color _avatarColor = AppTheme.accent;
+  bool _photoSelected = false;
+
+  final List<Color> _avatarColors = [
+    AppTheme.accent,
+    AppTheme.teal,
+    const Color(0xFF9C27B0),
+    const Color(0xFFE91E63),
+    AppTheme.warning,
+    AppTheme.success,
+  ];
 
   final List<String> _bloodGroups = [
     'A+',
@@ -46,42 +57,47 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
       'ta': 'உங்களைப் பற்றி சொல்லுங்கள்'
     },
     'photo': {
-      'en': '📷 Add Profile Photo',
-      'te': '📷 ప్రొఫైల్ ఫోటో జోడించండి',
-      'hi': '📷 प्रोफ़ाइल फ़ोटो जोड़ें',
-      'ta': '📷 சுயவிவர புகைப்படம் சேர்க்கவும்'
+      'en': 'Tap to choose avatar color',
+      'te': 'అవతార్ రంగు ఎంచుకోండి',
+      'hi': 'अवतार रंग चुनें',
+      'ta': 'அவதார் நிறம் தேர்ந்தெடுக்கவும்'
     },
     'photo_sub': {
-      'en': 'Optional · Helps caregivers identify you',
-      'te': 'ఐచ్ఛికం · సంరక్షకులకు గుర్తించడానికి సహాయం',
-      'hi': 'वैकल्पिक · देखभाल करने वालों को पहचानने में मदद',
-      'ta': 'விருப்பமானது · பராமரிப்பாளர்களுக்கு உதவும்'
+      'en': 'Your profile avatar',
+      'te': 'మీ ప్రొఫైల్ అవతార్',
+      'hi': 'आपका प्रोफ़ाइल अवतार',
+      'ta': 'உங்கள் சுயவிவர அவதார்'
     },
     'name': {
-      'en': 'Full Name',
-      'te': 'పూర్తి పేరు',
-      'hi': 'पूरा नाम',
-      'ta': 'முழு பெயர்'
+      'en': 'Full Name *',
+      'te': 'పూర్తి పేరు *',
+      'hi': 'पूरा नाम *',
+      'ta': 'முழு பெயர் *'
     },
-    'age': {'en': 'Age', 'te': 'వయసు', 'hi': 'आयु', 'ta': 'வயது'},
-    'gender': {'en': 'Gender', 'te': 'లింగం', 'hi': 'लिंग', 'ta': 'பாலினம்'},
+    'age': {'en': 'Age *', 'te': 'వయసు *', 'hi': 'आयु *', 'ta': 'வயது *'},
+    'gender': {
+      'en': 'Gender *',
+      'te': 'లింగం *',
+      'hi': 'लिंग *',
+      'ta': 'பாலினம் *'
+    },
     'phone': {
-      'en': 'Phone Number',
-      'te': 'ఫోన్ నంబర్',
-      'hi': 'फ़ोन नंबर',
-      'ta': 'தொலைபேசி எண்'
+      'en': 'Phone Number *',
+      'te': 'ఫోన్ నంబర్ *',
+      'hi': 'फ़ोन नंबर *',
+      'ta': 'தொலைபேசி எண் *'
     },
     'city': {
-      'en': 'City / Village',
-      'te': 'నగరం / గ్రామం',
-      'hi': 'शहर / गाँव',
-      'ta': 'நகரம் / கிராமம்'
+      'en': 'City / Village *',
+      'te': 'నగరం / గ్రామం *',
+      'hi': 'शहर / गाँव *',
+      'ta': 'நகரம் / கிராமம் *'
     },
     'blood': {
-      'en': 'Blood Group',
-      'te': 'రక్త వర్గం',
-      'hi': 'रक्त समूह',
-      'ta': 'இரத்த வகை'
+      'en': 'Blood Group *',
+      'te': 'రక్త వర్గం *',
+      'hi': 'रक्त समूह *',
+      'ta': 'இரத்த வகை *'
     },
     'continue': {
       'en': 'Continue →',
@@ -98,10 +114,41 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
     'male': {'en': 'Male', 'te': 'పురుషుడు', 'hi': 'पुरुष', 'ta': 'ஆண்'},
     'female': {'en': 'Female', 'te': 'స్త్రీ', 'hi': 'महिला', 'ta': 'பெண்'},
     'other': {'en': 'Other', 'te': 'ఇతర', 'hi': 'अन्य', 'ta': 'மற்றவர்'},
+    'fill_required': {
+      'en': 'Please fill all required fields',
+      'te': 'దయచేసి అన్ని అవసరమైన ఫీల్డ్‌లు పూరించండి',
+      'hi': 'कृपया सभी आवश्यक फ़ील्ड भरें',
+      'ta': 'தயவுசெய்து அனைத்து தேவையான புலங்களையும் நிரப்பவும்'
+    },
+    'choose_color': {
+      'en': 'Choose Avatar Color',
+      'te': 'అవతార్ రంగు ఎంచుకోండి',
+      'hi': 'अवतार रंग चुनें',
+      'ta': 'அவதார் நிறம் தேர்ந்தெடுக்கவும்'
+    },
   };
 
   String _label(String key, String lang) =>
       _labels[key]?[lang] ?? _labels[key]?['en'] ?? key;
+
+  @override
+  void initState() {
+    super.initState();
+    // Load existing profile data
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final provider = context.read<LanguageProvider>();
+      _nameController.text =
+          provider.userName == 'Lakshmi Devi' ? '' : provider.userName;
+      _phoneController.text = provider.userPhone;
+      _cityController.text =
+          provider.userCity == 'Vijayawada, AP' ? '' : provider.userCity;
+      setState(() {
+        _age = int.tryParse(provider.userAge) ?? 60;
+        _gender = provider.userGender;
+        _bloodGroup = provider.userBlood;
+      });
+    });
+  }
 
   @override
   void dispose() {
@@ -111,10 +158,90 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
     super.dispose();
   }
 
+  void _showColorPicker(BuildContext context, String lang) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppTheme.card,
+        title: LangText(_label('choose_color', lang), lang,
+            fontSize: 16, fontWeight: FontWeight.bold),
+        content: Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: _avatarColors
+              .map((color) => GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _avatarColor = color;
+                        _photoSelected = true;
+                      });
+                      Navigator.pop(ctx);
+                    },
+                    child: Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: color,
+                        border: Border.all(
+                          color: _avatarColor == color
+                              ? AppTheme.white
+                              : Colors.transparent,
+                          width: 3,
+                        ),
+                      ),
+                    ),
+                  ))
+              .toList(),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _continue(String lang) async {
+    // Validate required fields
+    if (_nameController.text.trim().isEmpty) {
+      _showError(_label('fill_required', lang));
+      return;
+    }
+    if (_phoneController.text.trim().isEmpty) {
+      _showError(_label('fill_required', lang));
+      return;
+    }
+    if (_cityController.text.trim().isEmpty) {
+      _showError(_label('fill_required', lang));
+      return;
+    }
+
+    // Save profile
+    await context.read<LanguageProvider>().saveProfile(
+          name: _nameController.text.trim(),
+          age: _age.toString(),
+          city: _cityController.text.trim(),
+          blood: _bloodGroup,
+          gender: _gender,
+          phone: _phoneController.text.trim(),
+          photo: _avatarColor.value.toString(),
+        );
+
+    if (mounted) context.go(AppRoutes.healthProfile);
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: AppTheme.error,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final lang = context.watch<LanguageProvider>().language;
     final font = LanguageProvider.getFontFamily(lang);
+    final fontSize = context.watch<LanguageProvider>().fontSize;
+
     return Scaffold(
       backgroundColor: AppTheme.background,
       body: SafeArea(
@@ -143,62 +270,94 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
                           ),
                         ),
                         const SizedBox(width: 10),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            LangText(_label('title', lang), lang,
-                                fontSize: 16, fontWeight: FontWeight.bold),
-                            LangText(_label('sub', lang), lang,
-                                fontSize: 12, color: AppTheme.grey),
-                          ],
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              LangText(_label('title', lang), lang,
+                                  fontSize: fontSize,
+                                  fontWeight: FontWeight.bold),
+                              LangText(_label('sub', lang), lang,
+                                  fontSize: fontSize - 3, color: AppTheme.grey),
+                            ],
+                          ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 16),
-                    // Photo area
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        color: AppTheme.card,
-                        borderRadius: BorderRadius.circular(13),
-                        border: Border.all(
-                          color: AppTheme.grey.withValues(alpha: 0.2),
-                          style: BorderStyle.solid,
+
+                    // Photo/Avatar area
+                    GestureDetector(
+                      onTap: () => _showColorPicker(context, lang),
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: AppTheme.card,
+                          borderRadius: BorderRadius.circular(13),
+                          border: Border.all(
+                            color: _photoSelected
+                                ? AppTheme.teal.withValues(alpha: 0.5)
+                                : AppTheme.grey.withValues(alpha: 0.2),
+                            style: BorderStyle.solid,
+                          ),
                         ),
-                      ),
-                      child: Column(
-                        children: [
-                          Container(
-                            width: 56,
-                            height: 56,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              gradient: const LinearGradient(
-                                colors: [AppTheme.accent, AppTheme.teal],
+                        child: Column(
+                          children: [
+                            Container(
+                              width: 72,
+                              height: 72,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: _avatarColor,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: _avatarColor.withValues(alpha: 0.4),
+                                    blurRadius: 12,
+                                  ),
+                                ],
+                              ),
+                              child: Center(
+                                child: Text(
+                                  _nameController.text.isEmpty
+                                      ? '👤'
+                                      : _nameController.text[0].toUpperCase(),
+                                  style: TextStyle(
+                                    fontSize:
+                                        _nameController.text.isEmpty ? 32 : 28,
+                                    color: AppTheme.white,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
                               ),
                             ),
-                            child: const Icon(Icons.person,
-                                color: AppTheme.white, size: 30),
-                          ),
-                          const SizedBox(height: 8),
-                          LangText(_label('photo', lang), lang,
-                              fontSize: 13,
-                              color: AppTheme.accent,
-                              fontWeight: FontWeight.w600),
-                          const SizedBox(height: 2),
-                          LangText(_label('photo_sub', lang), lang,
-                              fontSize: 11, color: AppTheme.grey),
-                        ],
+                            const SizedBox(height: 8),
+                            LangText(_label('photo', lang), lang,
+                                fontSize: fontSize - 2,
+                                color: AppTheme.accent,
+                                fontWeight: FontWeight.w600),
+                            const SizedBox(height: 2),
+                            LangText(_label('photo_sub', lang), lang,
+                                fontSize: fontSize - 4, color: AppTheme.grey),
+                          ],
+                        ),
                       ),
                     ),
                     const SizedBox(height: 12),
+
                     // Name
-                    _inputField(_nameController, _label('name', lang),
-                        Icons.person, font,
-                        isRequired: true),
+                    _inputField(
+                      controller: _nameController,
+                      label: _label('name', lang),
+                      icon: Icons.person,
+                      font: font,
+                      fontSize: fontSize,
+                      isRequired: true,
+                      onChanged: (_) => setState(() {}),
+                    ),
                     const SizedBox(height: 10),
-                    // Age and Gender row
+
+                    // Age and Gender
                     Row(
                       children: [
                         Expanded(
@@ -206,7 +365,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               LangText(_label('age', lang), lang,
-                                  fontSize: 11,
+                                  fontSize: fontSize - 3,
                                   color: AppTheme.grey,
                                   fontWeight: FontWeight.w600),
                               const SizedBox(height: 4),
@@ -227,14 +386,14 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
                                         if (_age > 1) _age--;
                                       }),
                                       child: const Icon(Icons.remove,
-                                          color: AppTheme.accent, size: 18),
+                                          color: AppTheme.accent, size: 20),
                                     ),
                                     Expanded(
                                       child: Text('$_age',
                                           textAlign: TextAlign.center,
-                                          style: const TextStyle(
+                                          style: TextStyle(
                                               color: AppTheme.white,
-                                              fontSize: 16,
+                                              fontSize: fontSize,
                                               fontWeight: FontWeight.bold)),
                                     ),
                                     GestureDetector(
@@ -242,7 +401,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
                                         if (_age < 120) _age++;
                                       }),
                                       child: const Icon(Icons.add,
-                                          color: AppTheme.accent, size: 18),
+                                          color: AppTheme.accent, size: 20),
                                     ),
                                   ],
                                 ),
@@ -256,7 +415,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               LangText(_label('gender', lang), lang,
-                                  fontSize: 11,
+                                  fontSize: fontSize - 3,
                                   color: AppTheme.grey,
                                   fontWeight: FontWeight.w600),
                               const SizedBox(height: 4),
@@ -279,7 +438,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
                                       child: LangText(
                                           _label(_gender.toLowerCase(), lang),
                                           lang,
-                                          fontSize: 14,
+                                          fontSize: fontSize - 2,
                                           fontWeight: FontWeight.w500),
                                     ),
                                     const Icon(Icons.check,
@@ -292,7 +451,8 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 8),
+
                     // Gender buttons
                     Row(
                       children: ['male', 'female', 'other'].map((g) {
@@ -314,7 +474,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
                                 ),
                                 child: Center(
                                   child: LangText(_label(g, lang), lang,
-                                      fontSize: 12,
+                                      fontSize: fontSize - 3,
                                       fontWeight: FontWeight.w600,
                                       color: isSelected
                                           ? AppTheme.white
@@ -327,16 +487,33 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
                       }).toList(),
                     ),
                     const SizedBox(height: 10),
-                    _inputField(_phoneController, _label('phone', lang),
-                        Icons.phone, font,
-                        isPhone: true, isRequired: true),
+
+                    // Phone
+                    _inputField(
+                      controller: _phoneController,
+                      label: _label('phone', lang),
+                      icon: Icons.phone,
+                      font: font,
+                      fontSize: fontSize,
+                      isPhone: true,
+                      isRequired: true,
+                    ),
                     const SizedBox(height: 10),
-                    _inputField(_cityController, _label('city', lang),
-                        Icons.location_on, font),
+
+                    // City
+                    _inputField(
+                      controller: _cityController,
+                      label: _label('city', lang),
+                      icon: Icons.location_on,
+                      font: font,
+                      fontSize: fontSize,
+                      isRequired: true,
+                    ),
                     const SizedBox(height: 10),
+
                     // Blood Group
                     LangText(_label('blood', lang), lang,
-                        fontSize: 11,
+                        fontSize: fontSize - 3,
                         color: AppTheme.grey,
                         fontWeight: FontWeight.w600),
                     const SizedBox(height: 6),
@@ -361,19 +538,21 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
                             ),
                             child: Text(bg,
                                 style: TextStyle(
-                                    color: isSelected
-                                        ? AppTheme.white
-                                        : AppTheme.grey,
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 13)),
+                                  color: isSelected
+                                      ? AppTheme.white
+                                      : AppTheme.grey,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: fontSize - 2,
+                                )),
                           ),
                         );
                       }).toList(),
                     ),
                     const SizedBox(height: 20),
+
                     // Continue button
                     GestureDetector(
-                      onTap: () => context.go(AppRoutes.healthProfile),
+                      onTap: () => _continue(lang),
                       child: Container(
                         width: double.infinity,
                         padding: const EdgeInsets.symmetric(vertical: 14),
@@ -384,14 +563,14 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
                         ),
                         child: Center(
                           child: LangText(_label('continue', lang), lang,
-                              fontSize: 16, fontWeight: FontWeight.bold),
+                              fontSize: fontSize, fontWeight: FontWeight.bold),
                         ),
                       ),
                     ),
                     const SizedBox(height: 8),
                     Center(
                       child: LangText(_label('step', lang), lang,
-                          fontSize: 12, color: AppTheme.grey),
+                          fontSize: fontSize - 4, color: AppTheme.grey),
                     ),
                   ],
                 ),
@@ -428,42 +607,55 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
     );
   }
 
-  Widget _inputField(TextEditingController controller, String label,
-      IconData icon, String font,
-      {bool isPhone = false, bool isRequired = false}) {
+  Widget _inputField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    required String font,
+    required double fontSize,
+    bool isPhone = false,
+    bool isRequired = false,
+    Function(String)? onChanged,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            LangText(label, font,
-                fontSize: 11,
-                color: AppTheme.grey,
-                fontWeight: FontWeight.w600),
-            if (isRequired)
-              const Text(' *',
-                  style: TextStyle(color: AppTheme.error, fontSize: 11)),
-          ],
-        ),
+        LangText(label, font,
+            fontSize: fontSize - 3,
+            color: AppTheme.grey,
+            fontWeight: FontWeight.w600),
         const SizedBox(height: 4),
         Container(
           decoration: BoxDecoration(
             color: AppTheme.card,
             borderRadius: BorderRadius.circular(11),
-            border: Border.all(color: AppTheme.teal.withValues(alpha: 0.5)),
+            border: Border.all(
+              color: controller.text.isNotEmpty
+                  ? AppTheme.teal.withValues(alpha: 0.8)
+                  : isRequired
+                      ? AppTheme.error.withValues(alpha: 0.4)
+                      : AppTheme.grey.withValues(alpha: 0.3),
+            ),
           ),
           child: TextField(
             controller: controller,
             keyboardType: isPhone ? TextInputType.phone : TextInputType.text,
             style: TextStyle(
-                fontFamily: font, color: AppTheme.white, fontSize: 14),
+                fontFamily: font,
+                color: AppTheme.white,
+                fontSize: fontSize - 2),
+            onChanged: onChanged ?? (_) => setState(() {}),
             decoration: InputDecoration(
               prefixIcon: Icon(icon, color: AppTheme.accent, size: 20),
+              suffixIcon: controller.text.isNotEmpty
+                  ? const Icon(Icons.check, color: AppTheme.teal, size: 16)
+                  : isRequired
+                      ? const Icon(Icons.error_outline,
+                          color: AppTheme.error, size: 16)
+                      : null,
               border: InputBorder.none,
               contentPadding:
                   const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-              suffixIcon:
-                  const Icon(Icons.check, color: AppTheme.teal, size: 16),
             ),
           ),
         ),

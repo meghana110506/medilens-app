@@ -2,6 +2,7 @@
 import 'package:provider/provider.dart';
 import 'package:medilens/core/routes.dart';
 import 'package:medilens/core/theme.dart';
+import 'package:medilens/core/app_data.dart';
 import 'package:medilens/providers/language_provider.dart';
 
 void main() async {
@@ -17,12 +18,25 @@ class MediLensApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => LanguageProvider()),
+        ChangeNotifierProvider(create: (_) => AppData()),
       ],
-      child: MaterialApp.router(
-        title: 'MediLens',
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.darkTheme,
-        routerConfig: AppRoutes.router,
+      child: Consumer<LanguageProvider>(
+        builder: (context, provider, child) {
+          return MaterialApp.router(
+            title: 'MediLens',
+            debugShowCheckedModeBanner: false,
+            theme: AppTheme.darkTheme,
+            builder: (context, child) {
+              return MediaQuery(
+                data: MediaQuery.of(context).copyWith(
+                  textScaler: TextScaler.linear(provider.fontSize / 18.0),
+                ),
+                child: child!,
+              );
+            },
+            routerConfig: AppRoutes.router,
+          );
+        },
       ),
     );
   }

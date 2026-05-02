@@ -21,122 +21,31 @@ class _SosScreenState extends State<SosScreen>
   bool _sosSent = false;
 
   final Map<String, Map<String, String>> _labels = {
-    'title': {
-      'en': '🆘 Emergency SOS',
-      'te': '🆘 అత్యవసర SOS',
-      'hi': '🆘 आपातकालीन SOS',
-      'ta': '🆘 அவசர SOS'
-    },
-    'sub': {
-      'en': 'SMS + GPS sent instantly to caregiver',
-      'te': 'SMS + GPS వెంటనే సంరక్షకుడికి పంపబడుతుంది',
-      'hi': 'SMS + GPS तुरंत देखभालकर्ता को भेजा जाता है',
-      'ta': 'SMS + GPS உடனடியாக பராமரிப்பாளருக்கு அனுப்பப்படுகிறது'
-    },
-    'desc': {
-      'en': 'Press the button below to immediately alert your caregiver.',
-      'te': 'మీ సంరక్షకుడికి వెంటనే హెచ్చరించడానికి కింది బటన్ నొక్కండి.',
-      'hi': 'अपने देखभालकर्ता को तुरंत सचेत करने के लिए नीचे दिए बटन को दबाएं।',
-      'ta':
-          'உங்கள் பராமரிப்பாளருக்கு உடனடியாக எச்சரிக்க கீழே உள்ள பொத்தானை அழுத்துங்கள்.'
-    },
-    'send_sos': {
-      'en': 'SEND\nSOS',
-      'te': 'SOS\nపంపు',
-      'hi': 'SOS\nभेजें',
-      'ta': 'SOS\nஅனுப்பு'
-    },
-    'tip': {
-      'en': 'Tip: The floating 🆘 button is always visible on every screen.',
-      'te': 'చిట్కా: తేలుతున్న 🆘 బటన్ ప్రతి స్క్రీన్‌పై కనిపిస్తుంది.',
-      'hi': 'सुझाव: फ्लोटिंग 🆘 बटन हर स्क्रीन पर दिखता है।',
-      'ta': 'குறிப்பு: மிதக்கும் 🆘 பொத்தான் ஒவ்வொரு திரையிலும் தெரியும்.'
-    },
-    'caregiver': {
-      'en': 'Registered Caregiver',
-      'te': 'నమోదిత సంరక్షకుడు',
-      'hi': 'पंजीकृत देखभालकर्ता',
-      'ta': 'பதிவுசெய்த பராமரிப்பாளர்'
-    },
-    'primary': {
-      'en': 'Primary Caregiver',
-      'te': 'ప్రాథమిక సంరక్షకుడు',
-      'hi': 'प्राथमिक देखभालकर्ता',
-      'ta': 'முதன்மை பராமரிப்பாளர்'
-    },
-    'sos_sends': {
-      'en': 'SOS Will Send',
-      'te': 'SOS పంపుతుంది',
-      'hi': 'SOS भेजेगा',
-      'ta': 'SOS அனுப்பும்'
-    },
+    'title': {'en': '🆘 Emergency SOS', 'te': '🆘 అత్యవసర SOS', 'hi': '🆘 आपातकालीन SOS', 'ta': '🆘 அவசர SOS'},
+    'sub': {'en': 'SMS + GPS sent instantly to caregiver', 'te': 'SMS + GPS వెంటనే సంరక్షకుడికి పంపబడుతుంది', 'hi': 'SMS + GPS तुरंत देखभालकर्ता को भेजा जाता है', 'ta': 'SMS + GPS உடனடியாக பராமரிப்பாளருக்கு அனுப்பப்படுகிறது'},
+    'desc': {'en': 'Press the button below to immediately alert your caregiver.', 'te': 'మీ సంరక్షకుడికి వెంటనే హెచ్చరించడానికి కింది బటన్ నొక్కండి.', 'hi': 'अपने देखभालकर्ता को तुरंत सचेत करने के लिए नीचे दिए बटन को दबाएं।', 'ta': 'உங்கள் பராமரிப்பாளருக்கு உடனடியாக எச்சரிக்க கீழே உள்ள பொத்தானை அழுத்துங்கள்.'},
+    'send_sos': {'en': 'SEND\nSOS', 'te': 'SOS\nపంపు', 'hi': 'SOS\nभेजें', 'ta': 'SOS\nஅனுப்பு'},
+    'tip': {'en': 'Tip: The floating 🆘 button is always visible on every screen.', 'te': 'చిట్కా: తేలుతున్న 🆘 బటన్ ప్రతి స్క్రీన్‌పై కనిపిస్తుంది.', 'hi': 'सुझाव: फ्लोटिंग 🆘 बटन हर स्क्रीन पर दिखता है।', 'ta': 'குறிப்பு: மிதக்கும் 🆘 பொத்தான் ஒவ்வொரு திரையிலும் தெரியும்.'},
+    'caregiver': {'en': 'Registered Caregiver', 'te': 'నమోదిత సంరక్షకుడు', 'hi': 'पंजीकृत देखभालकर्ता', 'ta': 'பதிவுசெய்த பராமரிப்பாளர்'},
+    'primary': {'en': 'Primary Caregiver', 'te': 'ప్రాథమిక సంరక్షకుడు', 'hi': 'प्राथमिक देखभालकर्ता', 'ta': 'முதன்மை பராமரிப்பாளர்'},
+    'not_set': {'en': 'No caregiver set. Tap to add.', 'te': 'సంరక్షకుడు సెట్ చేయలేదు. జోడించడానికి నొక్కండి.', 'hi': 'कोई देखभालकर्ता नहीं। जोड़ने के लिए टैप करें।', 'ta': 'பராமரிப்பாளர் அமைக்கப்படவில்லை. சேர்க்க தட்டவும்.'},
+    'sos_sends': {'en': 'SOS Will Send', 'te': 'SOS పంపుతుంది', 'hi': 'SOS भेजेगा', 'ta': 'SOS அனுப்பும்'},
     'location': {'en': 'Location', 'te': 'స్థానం', 'hi': 'स्थान', 'ta': 'இடம்'},
     'gps': {'en': 'GPS', 'te': 'GPS', 'hi': 'GPS', 'ta': 'GPS'},
-    'last_scan': {
-      'en': 'Last Scan',
-      'te': 'చివరి స్కాన్',
-      'hi': 'अंतिम स्कैन',
-      'ta': 'கடைசி ஸ்கேன்'
-    },
+    'last_scan': {'en': 'Last Scan', 'te': 'చివరి స్కాన్', 'hi': 'अंतिम स्कैन', 'ta': 'கடைசி ஸ்கேன்'},
     'method': {'en': 'Method', 'te': 'పద్ధతి', 'hi': 'तरीका', 'ta': 'முறை'},
     'sms': {'en': 'SMS', 'te': 'SMS', 'hi': 'SMS', 'ta': 'SMS'},
-    'voice_label': {
-      'en': 'Voice',
-      'te': 'వాయిస్',
-      'hi': 'आवाज़',
-      'ta': 'குரல்'
-    },
-    'manage': {
-      'en': 'Manage Caregivers →',
-      'te': 'సంరక్షకులను నిర్వహించండి →',
-      'hi': 'देखभालकर्ताओं को प्रबंधित करें →',
-      'ta': 'பராமரிப்பாளர்களை நிர்வகிக்கவும் →'
-    },
-    'sent_title': {
-      'en': 'SOS Sent!',
-      'te': 'SOS పంపబడింది!',
-      'hi': 'SOS भेजा गया!',
-      'ta': 'SOS அனுப்பப்பட்டது!'
-    },
-    'sent_sub': {
-      'en': 'SMS sent to Padma at +91 98765 11111. Voice alert played.',
-      'te':
-          'SMS పద్మకు +91 98765 11111 కి పంపబడింది. వాయిస్ అలర్ట్ ప్లే అయింది.',
-      'hi': 'SMS पद्मा को +91 98765 11111 पर भेजा गया।',
-      'ta': 'SMS பத்மாவுக்கு +91 98765 11111 க்கு அனுப்பப்பட்டது.'
-    },
-    'sent_at': {
-      'en': 'Sent at',
-      'te': 'పంపిన సమయం',
-      'hi': 'भेजा गया',
-      'ta': 'அனுப்பிய நேரம்'
-    },
-    'dismiss': {
-      'en': 'Dismiss',
-      'te': 'తొలగించు',
-      'hi': 'खारिज करें',
-      'ta': 'நிராகரி'
-    },
+    'voice_label': {'en': 'Voice', 'te': 'వాయిస్', 'hi': 'आवाज़', 'ta': 'குரல்'},
+    'manage': {'en': 'Manage Caregivers →', 'te': 'సంరక్షకులను నిర్వహించండి →', 'hi': 'देखभालकर्ताओं को प्रबंधित करें →', 'ta': 'பராமரிப்பாளர்களை நிர்வகிக்கவும் →'},
+    'sent_title': {'en': 'SOS Sent!', 'te': 'SOS పంపబడింది!', 'hi': 'SOS भेजा गया!', 'ta': 'SOS அனுப்பப்பட்டது!'},
+    'sent_sub': {'en': 'SMS sent to caregiver. Voice alert played.', 'te': 'SMS సంరక్షకుడికి పంపబడింది. వాయిస్ అలర్ట్ ప్లే అయింది.', 'hi': 'SMS देखभालकर्ता को भेजा गया।', 'ta': 'SMS பராமரிப்பாளருக்கு அனுப்பப்பட்டது.'},
+    'sent_at': {'en': 'Sent at', 'te': 'పంపిన సమయం', 'hi': 'भेजा गया', 'ta': 'அனுப்பிய நேரம்'},
+    'dismiss': {'en': 'Dismiss', 'te': 'తొలగించు', 'hi': 'खारिज करें', 'ta': 'நிராகரி'},
     'nav_home': {'en': 'Home', 'te': 'హోమ్', 'hi': 'होम', 'ta': 'முகப்பு'},
     'nav_scan': {'en': 'Scan', 'te': 'స్కాన్', 'hi': 'स्कैन', 'ta': 'ஸ்கேன்'},
-    'nav_cabinet': {
-      'en': 'Cabinet',
-      'te': 'పెట్టె',
-      'hi': 'कैबिनेट',
-      'ta': 'பெட்டி'
-    },
-    'nav_reminders': {
-      'en': 'Reminders',
-      'te': 'రిమైండర్లు',
-      'hi': 'रिमाइंडर',
-      'ta': 'நினைவூட்டல்'
-    },
-    'nav_settings': {
-      'en': 'Settings',
-      'te': 'సెట్టింగులు',
-      'hi': 'सेटिंग्స',
-      'ta': 'அமைப்புகள்'
-    },
+    'nav_cabinet': {'en': 'Cabinet', 'te': 'పెట్టె', 'hi': 'कैबिनेट', 'ta': 'பெட்டி'},
+    'nav_reminders': {'en': 'Reminders', 'te': 'రిమైండర్లు', 'hi': 'रिमाइंडर', 'ta': 'நினைவூட்டல்'},
+    'nav_settings': {'en': 'Settings', 'te': 'సెట్టింగులు', 'hi': 'सेटிங்ஸ்', 'ta': 'அமைப்புகள்'},
   };
 
   String _label(String key, String lang) =>
@@ -159,23 +68,25 @@ class _SosScreenState extends State<SosScreen>
   }
 
   Future<void> _sendSOS(String lang) async {
-    // Speak alert first
-    await context.read<LanguageProvider>().speak(lang == 'te'
-        ? 'అత్యవసర సహాయం కోసం కాల్ చేస్తున్నాం'
-        : lang == 'hi'
-            ? 'आपातकालीन सहायता के लिए कॉल कर रहे हैं'
-            : lang == 'ta'
-                ? 'அவசர உதவிக்கு அழைக்கிறோம்'
-                : 'Sending emergency SOS alert');
+    final provider = context.read<LanguageProvider>();
+    final phone = provider.caregiverPhone.isEmpty
+        ? '+919876511111' : provider.caregiverPhone;
+    final patientName = provider.userName.isEmpty
+        ? 'Patient' : provider.userName;
 
-    // Open SMS app with pre-filled emergency message
-    final message = Uri.encodeComponent('EMERGENCY SOS from MediLens!\n'
-        'Patient: Lakshmi Devi needs immediate help.\n'
-        'Last medicine taken: Metformin 500mg.\n'
+    await provider.speak(
+        lang == 'te' ? 'అత్యవసర సహాయం కోసం కాల్ చేస్తున్నాం'
+        : lang == 'hi' ? 'आपातकालीन सहायता के लिए कॉल कर रहे हैं'
+        : lang == 'ta' ? 'அவசர உதவிக்கு அழைக்கிறோம்'
+        : 'Sending emergency SOS alert');
+
+    final message = Uri.encodeComponent(
+        'EMERGENCY SOS from MediLens!\n'
+        'Patient: $patientName needs immediate help.\n'
         'Please call immediately!\n'
         'Sent from MediLens Safety App.');
 
-    final smsUri = Uri.parse('sms:+919876511111?body=$message');
+    final smsUri = Uri.parse('sms:$phone?body=$message');
 
     try {
       if (await canLaunchUrl(smsUri)) {
@@ -190,8 +101,17 @@ class _SosScreenState extends State<SosScreen>
 
   @override
   Widget build(BuildContext context) {
-    final lang = context.watch<LanguageProvider>().language;
+    final provider = context.watch<LanguageProvider>();
+    final lang = provider.language;
     final font = LanguageProvider.getFontFamily(lang);
+
+    final caregiverName = provider.caregiverName.isEmpty
+        ? _label('not_set', lang) : provider.caregiverName;
+    final caregiverPhone = provider.caregiverPhone.isEmpty
+        ? '' : provider.caregiverPhone;
+    final caregiverRelation = provider.caregiverRelation.isEmpty
+        ? '' : provider.caregiverRelation;
+
     return Scaffold(
       backgroundColor: AppTheme.background,
       body: Stack(
@@ -200,15 +120,14 @@ class _SosScreenState extends State<SosScreen>
             child: Column(
               children: [
                 Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 14, vertical: 10),
                   child: Row(
                     children: [
                       GestureDetector(
                         onTap: () => context.go(AppRoutes.home),
                         child: Container(
-                          width: 30,
-                          height: 30,
+                          width: 30, height: 30,
                           decoration: BoxDecoration(
                             color: AppTheme.card,
                             borderRadius: BorderRadius.circular(8),
@@ -244,10 +163,9 @@ class _SosScreenState extends State<SosScreen>
                             color: AppTheme.grey,
                             textAlign: TextAlign.center),
                         const SizedBox(height: 20),
-                        // SOS Button with pulse rings
+                        // SOS Button
                         SizedBox(
-                          width: 140,
-                          height: 140,
+                          width: 140, height: 140,
                           child: Stack(
                             alignment: Alignment.center,
                             children: [
@@ -256,8 +174,7 @@ class _SosScreenState extends State<SosScreen>
                                 builder: (_, __) => Transform.scale(
                                   scale: _pulseAnim.value,
                                   child: Container(
-                                    width: 130,
-                                    height: 130,
+                                    width: 130, height: 130,
                                     decoration: BoxDecoration(
                                       shape: BoxShape.circle,
                                       border: Border.all(
@@ -273,8 +190,7 @@ class _SosScreenState extends State<SosScreen>
                                 builder: (_, __) => Transform.scale(
                                   scale: _pulseAnim.value * 0.85,
                                   child: Container(
-                                    width: 110,
-                                    height: 110,
+                                    width: 110, height: 110,
                                     decoration: BoxDecoration(
                                       shape: BoxShape.circle,
                                       border: Border.all(
@@ -288,8 +204,7 @@ class _SosScreenState extends State<SosScreen>
                               GestureDetector(
                                 onTap: () => _sendSOS(lang),
                                 child: Container(
-                                  width: 86,
-                                  height: 86,
+                                  width: 86, height: 86,
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
                                     gradient: const LinearGradient(
@@ -314,7 +229,8 @@ class _SosScreenState extends State<SosScreen>
                                       const Text('🆘',
                                           style: TextStyle(fontSize: 22)),
                                       const SizedBox(height: 2),
-                                      Text(_label('send_sos', lang),
+                                      Text(
+                                          _label('send_sos', lang),
                                           textAlign: TextAlign.center,
                                           style: TextStyle(
                                             fontFamily: font,
@@ -343,7 +259,8 @@ class _SosScreenState extends State<SosScreen>
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('💡', style: TextStyle(fontSize: 16)),
+                              const Text('💡',
+                                  style: TextStyle(fontSize: 16)),
                               const SizedBox(width: 8),
                               Expanded(
                                 child: LangText(_label('tip', lang), lang,
@@ -362,60 +279,76 @@ class _SosScreenState extends State<SosScreen>
                               fontWeight: FontWeight.w600),
                         ),
                         const SizedBox(height: 8),
-                        Container(
-                          padding: const EdgeInsets.all(14),
-                          decoration: BoxDecoration(
-                            color: AppTheme.card,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                                color: AppTheme.grey.withValues(alpha: 0.15)),
-                          ),
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 36,
-                                height: 36,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  gradient: const LinearGradient(colors: [
-                                    Color(0xFF7C3AED),
-                                    Color(0xFFA855F7)
-                                  ]),
-                                ),
-                                child: const Center(
-                                  child: Text('P',
-                                      style: TextStyle(
+                        GestureDetector(
+                          onTap: provider.caregiverName.isEmpty
+                              ? () => context.go(AppRoutes.caregiverSetup)
+                              : null,
+                          child: Container(
+                            padding: const EdgeInsets.all(14),
+                            decoration: BoxDecoration(
+                              color: AppTheme.card,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                  color: provider.caregiverName.isEmpty
+                                      ? AppTheme.error.withValues(alpha: 0.3)
+                                      : AppTheme.grey.withValues(alpha: 0.15)),
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 36, height: 36,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    gradient: const LinearGradient(colors: [
+                                      Color(0xFF7C3AED),
+                                      Color(0xFFA855F7)
+                                    ]),
+                                  ),
+                                  child: Center(
+                                    child: Text(
+                                      provider.caregiverName.isEmpty
+                                          ? '?'
+                                          : provider.caregiverName[0]
+                                              .toUpperCase(),
+                                      style: const TextStyle(
                                           color: AppTheme.white,
                                           fontWeight: FontWeight.bold,
-                                          fontSize: 16)),
+                                          fontSize: 16),
+                                    ),
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Text('Padma (Daughter)',
-                                        style: TextStyle(
-                                            color: AppTheme.white,
-                                            fontWeight: FontWeight.w600,
-                                            fontSize: 14)),
-                                    LangText(_label('primary', lang), lang,
-                                        fontSize: 11, color: AppTheme.grey),
-                                    const Text('+91 98765 11111',
-                                        style: TextStyle(
-                                            color: AppTheme.accent,
-                                            fontSize: 12)),
-                                  ],
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(caregiverName,
+                                          style: const TextStyle(
+                                              color: AppTheme.white,
+                                              fontWeight: FontWeight.w600,
+                                              fontSize: 14)),
+                                      if (caregiverRelation.isNotEmpty)
+                                        LangText(
+                                            caregiverRelation, lang,
+                                            fontSize: 11,
+                                            color: AppTheme.grey),
+                                      if (caregiverPhone.isNotEmpty)
+                                        Text(caregiverPhone,
+                                            style: const TextStyle(
+                                                color: AppTheme.accent,
+                                                fontSize: 12)),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                              GestureDetector(
-                                onTap: () =>
-                                    context.go(AppRoutes.caregiverSetup),
-                                child: const Icon(Icons.edit,
-                                    color: AppTheme.grey, size: 18),
-                              ),
-                            ],
+                                GestureDetector(
+                                  onTap: () =>
+                                      context.go(AppRoutes.caregiverSetup),
+                                  child: const Icon(Icons.edit,
+                                      color: AppTheme.grey, size: 18),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -431,9 +364,6 @@ class _SosScreenState extends State<SosScreen>
                           children: [
                             _infoCard('📍', _label('location', lang),
                                 _label('gps', lang), lang),
-                            const SizedBox(width: 8),
-                            _infoCard('💊', _label('last_scan', lang),
-                                'Metformin', lang),
                             const SizedBox(width: 8),
                             _infoCard('📱', _label('method', lang),
                                 _label('sms', lang), lang),
@@ -468,9 +398,7 @@ class _SosScreenState extends State<SosScreen>
           ),
           // Bottom nav
           Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
+            bottom: 0, left: 0, right: 0,
             child: Container(
               height: 70,
               decoration: BoxDecoration(
@@ -486,12 +414,13 @@ class _SosScreenState extends State<SosScreen>
                       () => context.go(AppRoutes.home), font),
                   _navItem(Icons.qr_code_scanner, _label('nav_scan', lang),
                       false, () => context.go(AppRoutes.scan), font),
-                  _navItem(Icons.medical_services, _label('nav_cabinet', lang),
-                      false, () => context.go(AppRoutes.cabinet), font),
+                  _navItem(Icons.medical_services,
+                      _label('nav_cabinet', lang), false,
+                      () => context.go(AppRoutes.cabinet), font),
                   _navItem(Icons.alarm, _label('nav_reminders', lang), false,
                       () => context.go(AppRoutes.reminders), font),
-                  _navItem(Icons.settings, _label('nav_settings', lang), false,
-                      () => context.go(AppRoutes.settings), font),
+                  _navItem(Icons.settings, _label('nav_settings', lang),
+                      false, () => context.go(AppRoutes.settings), font),
                 ],
               ),
             ),
@@ -569,7 +498,8 @@ class _SosScreenState extends State<SosScreen>
         decoration: BoxDecoration(
           color: AppTheme.card,
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: AppTheme.grey.withValues(alpha: 0.15)),
+          border: Border.all(
+              color: AppTheme.grey.withValues(alpha: 0.15)),
         ),
         child: Column(
           children: [
@@ -577,7 +507,8 @@ class _SosScreenState extends State<SosScreen>
             const SizedBox(height: 4),
             LangText(label, lang, fontSize: 10, color: AppTheme.grey),
             const SizedBox(height: 2),
-            LangText(value, lang, fontSize: 11, fontWeight: FontWeight.w600),
+            LangText(value, lang,
+                fontSize: 11, fontWeight: FontWeight.w600),
           ],
         ),
       ),
@@ -594,14 +525,16 @@ class _SosScreenState extends State<SosScreen>
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(icon,
-                color: isActive ? AppTheme.accent : AppTheme.grey, size: 26),
+                color: isActive ? AppTheme.accent : AppTheme.grey,
+                size: 26),
             const SizedBox(height: 4),
             Text(label,
                 style: TextStyle(
                   fontFamily: font,
                   color: isActive ? AppTheme.accent : AppTheme.grey,
                   fontSize: 11,
-                  fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+                  fontWeight:
+                      isActive ? FontWeight.w600 : FontWeight.normal,
                 )),
           ],
         ),

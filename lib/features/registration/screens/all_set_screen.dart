@@ -38,53 +38,11 @@ class _AllSetScreenState extends State<AllSetScreen>
       'hi': 'आपकी प्रोफ़ाइल सारांश',
       'ta': 'உங்கள் சுயவிவர சுருக்கம்'
     },
-    'name': {
-      'en': 'Lakshmi Devi, 68',
-      'te': 'లక్ష్మి దేవి, 68',
-      'hi': 'लक्ष्मी देवी, 68',
-      'ta': 'லக்ஷ்மி தேவி, 68'
-    },
-    'location': {
-      'en': 'Vijayawada, AP · B+',
-      'te': 'విజయవాడ, AP · B+',
-      'hi': 'विजयवाड़ा, AP · B+',
-      'ta': 'விஜயவாடா, AP · B+'
-    },
-    'diabetes': {
-      'en': 'Diabetes',
-      'te': 'మధుమేహం',
-      'hi': 'मधुमेह',
-      'ta': 'நீரிழிவு'
-    },
-    'highbp': {
-      'en': 'High BP',
-      'te': 'రక్తపోటు',
-      'hi': 'उच्च BP',
-      'ta': 'உயர் BP'
-    },
-    'lang_tag': {
-      'en': 'Telugu + English',
-      'te': 'తెలుగు + ఆంగ్లం',
-      'hi': 'तेलुगु + अंग्रेजी',
-      'ta': 'தெலுங்கு + ஆங்கிலம்'
-    },
-    'reminders': {
-      'en': 'Reminders ON',
-      'te': 'రిమైండర్లు ఆన్',
-      'hi': 'रिमाइंडर चालू',
-      'ta': 'நினைவூட்டல்கள் ON'
-    },
     'sos': {
-      'en': 'SOS → Padma (Daughter)',
-      'te': 'SOS → పద్మ (కుమార్తె)',
-      'hi': 'SOS → पद्मा (बेटी)',
-      'ta': 'SOS → பத்மா (மகள்)'
-    },
-    'sos_phone': {
-      'en': '+91 98765 11111',
-      'te': '+91 98765 11111',
-      'hi': '+91 98765 11111',
-      'ta': '+91 98765 11111'
+      'en': 'SOS Emergency Contact',
+      'te': 'SOS అత్యవసర సంప్రదింపు',
+      'hi': 'SOS आपातकालीन संपर्क',
+      'ta': 'SOS அவசர தொடர்பு'
     },
     'go_home': {
       'en': '🏠 Go to Home →',
@@ -97,6 +55,19 @@ class _AllSetScreenState extends State<AllSetScreen>
       'te': 'మీరు మళ్ళీ నమోదు చేసుకోవాల్సిన అవసరం లేదు',
       'hi': 'आपको दोबारा पंजीकरण करने की आवश्यकता नहीं',
       'ta': 'நீங்கள் மீண்டும் பதிவு செய்ய வேண்டியதில்லை'
+    },
+    'yrs': {'en': 'yrs', 'te': 'సంవత్సరాలు', 'hi': 'वर्ष', 'ta': 'வயது'},
+    'reminders_on': {
+      'en': 'Reminders ON',
+      'te': 'రిమైండర్లు ఆన్',
+      'hi': 'रिमाइंडर चालू',
+      'ta': 'நினైவூட்டல்கள் ON'
+    },
+    'not_set': {
+      'en': 'Not set yet',
+      'te': 'ఇంకా సెట్ చేయలేదు',
+      'hi': 'अभी सेट नहीं',
+      'ta': 'இன்னும் அமைக்கவில்லை'
     },
   };
 
@@ -120,7 +91,16 @@ class _AllSetScreenState extends State<AllSetScreen>
 
   @override
   Widget build(BuildContext context) {
-    final lang = context.watch<LanguageProvider>().language;
+    final provider = context.watch<LanguageProvider>();
+    final lang = provider.language;
+
+    final name = provider.userName.isEmpty ? 'Your Name' : provider.userName;
+    final age = provider.userAge;
+    final city = provider.userCity.isEmpty ? 'Your City' : provider.userCity;
+    final blood = provider.userBlood;
+    final gender = provider.userGender;
+    final langName = LanguageProvider.languageNames[lang] ?? 'English';
+
     return Scaffold(
       backgroundColor: AppTheme.background,
       body: SafeArea(
@@ -128,7 +108,6 @@ class _AllSetScreenState extends State<AllSetScreen>
           padding: const EdgeInsets.fromLTRB(14, 8, 14, 24),
           child: Column(
             children: [
-              // All dots done
               _progressDots(),
               const SizedBox(height: 20),
               // Success icon
@@ -148,7 +127,7 @@ class _AllSetScreenState extends State<AllSetScreen>
                       BoxShadow(
                           color: AppTheme.success.withValues(alpha: 0.4),
                           blurRadius: 24,
-                          spreadRadius: 4),
+                          spreadRadius: 4)
                     ],
                   ),
                   child:
@@ -166,6 +145,7 @@ class _AllSetScreenState extends State<AllSetScreen>
                   color: AppTheme.grey,
                   textAlign: TextAlign.center),
               const SizedBox(height: 24),
+
               // Profile summary card
               Container(
                 width: double.infinity,
@@ -184,28 +164,48 @@ class _AllSetScreenState extends State<AllSetScreen>
                         color: AppTheme.grey,
                         fontWeight: FontWeight.w600),
                     const SizedBox(height: 12),
+                    // Profile row
                     Row(
                       children: [
                         Container(
-                          width: 42,
-                          height: 42,
+                          width: 48,
+                          height: 48,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            gradient: const LinearGradient(
-                                colors: [AppTheme.accent, AppTheme.teal]),
+                            color: provider.userPhoto.isNotEmpty
+                                ? Color(int.tryParse(provider.userPhoto) ??
+                                    AppTheme.accent.value)
+                                : AppTheme.accent,
                           ),
-                          child: const Icon(Icons.person,
-                              color: AppTheme.white, size: 24),
+                          child: Center(
+                            child: Text(
+                              provider.userName.isNotEmpty
+                                  ? provider.userName[0].toUpperCase()
+                                  : '👤',
+                              style: TextStyle(
+                                fontSize:
+                                    provider.userName.isNotEmpty ? 20 : 22,
+                                color: AppTheme.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
                         ),
                         const SizedBox(width: 12),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            LangText(_label('name', lang), lang,
-                                fontSize: 15, fontWeight: FontWeight.bold),
-                            LangText(_label('location', lang), lang,
-                                fontSize: 12, color: AppTheme.grey),
-                          ],
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('$name, $age ${_label('yrs', lang)}',
+                                  style: const TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppTheme.white)),
+                              Text('$city · $blood · $gender',
+                                  style: const TextStyle(
+                                      fontSize: 12, color: AppTheme.grey)),
+                            ],
+                          ),
                         ),
                       ],
                     ),
@@ -214,13 +214,12 @@ class _AllSetScreenState extends State<AllSetScreen>
                       spacing: 6,
                       runSpacing: 6,
                       children: [
-                        _pill(_label('diabetes', lang), AppTheme.error),
-                        _pill(_label('highbp', lang), AppTheme.warning),
-                        _pill(_label('lang_tag', lang), AppTheme.accent),
-                        _pill(_label('reminders', lang), AppTheme.success),
+                        _pill(langName, AppTheme.accent),
+                        _pill(_label('reminders_on', lang), AppTheme.success),
                       ],
                     ),
                     const SizedBox(height: 12),
+                    // SOS contact
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
@@ -238,11 +237,16 @@ class _AllSetScreenState extends State<AllSetScreen>
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 LangText(_label('sos', lang), lang,
-                                    fontSize: 13, fontWeight: FontWeight.w600),
-                                LangText(_label('sos_phone', lang), lang,
-                                    fontSize: 12, color: AppTheme.grey),
+                                    fontSize: 12, fontWeight: FontWeight.w600),
+                                LangText(_label('not_set', lang), lang,
+                                    fontSize: 11, color: AppTheme.grey),
                               ],
                             ),
+                          ),
+                          GestureDetector(
+                            onTap: () => context.go(AppRoutes.caregiverSetup),
+                            child: const Icon(Icons.edit,
+                                color: AppTheme.grey, size: 16),
                           ),
                         ],
                       ),

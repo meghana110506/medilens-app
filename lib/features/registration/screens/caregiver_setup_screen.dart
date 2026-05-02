@@ -17,8 +17,10 @@ class _CaregiverSetupScreenState extends State<CaregiverSetupScreen> {
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
   String _selectedRelation = 'daughter';
+  bool _nameError = false;
+  bool _phoneError = false;
 
-  final List<Map<String, String>> _relations = [
+  final List<Map<String, dynamic>> _relations = [
     {
       'key': 'daughter',
       'en': '👧 Daughter',
@@ -46,6 +48,48 @@ class _CaregiverSetupScreenState extends State<CaregiverSetupScreen> {
       'te': '👨‍⚕️ డాక్టర్',
       'hi': '👨‍⚕️ डॉक्टर',
       'ta': '👨‍⚕️ மருத்துவர்'
+    },
+    {
+      'key': 'sibling',
+      'en': '🧑 Sibling',
+      'te': '🧑 సోదరుడు/సోదరి',
+      'hi': '🧑 भाई/बहन',
+      'ta': '🧑 சகோதரர்/சகோதரி'
+    },
+    {
+      'key': 'parent',
+      'en': '👨‍👩 Parent',
+      'te': '👨‍👩 తల్లిదండ్రి',
+      'hi': '👨‍👩 माता/पिता',
+      'ta': '👨‍👩 பெற்றோர்'
+    },
+    {
+      'key': 'friend',
+      'en': '🤝 Friend',
+      'te': '🤝 స్నేహితుడు',
+      'hi': '🤝 मित्र',
+      'ta': '🤝 நண்பர்'
+    },
+    {
+      'key': 'neighbour',
+      'en': '🏠 Neighbour',
+      'te': '🏠 పొరుగువారు',
+      'hi': '🏠 पड़ोसी',
+      'ta': '🏠 அண்டை வீட்டார்'
+    },
+    {
+      'key': 'nurse',
+      'en': '👩‍⚕️ Nurse',
+      'te': '👩‍⚕️ నర్సు',
+      'hi': '👩‍⚕️ नर्स',
+      'ta': '👩‍⚕️ செவிலியர்'
+    },
+    {
+      'key': 'caretaker',
+      'en': '🧑‍🦯 Caretaker',
+      'te': '🧑‍🦯 సంరక్షకుడు',
+      'hi': '🧑‍🦯 देखभालकर्ता',
+      'ta': '🧑‍🦯 பாதுகாவலர்'
     },
   ];
 
@@ -88,9 +132,9 @@ class _CaregiverSetupScreenState extends State<CaregiverSetupScreen> {
     },
     'add_second': {
       'en': '＋ Add Second Caregiver (Optional)',
-      'te': '＋ రెండవ సంరక్షకుడిని జోడించండి (ఐచ్ఛికం)',
-      'hi': '＋ दूसरा देखभालकर्ता जोड़ें (वैकल्पिक)',
-      'ta': '＋ இரண்டாவது பராமரிப்பாளரை சேர்க்கவும் (விருப்பமானது)'
+      'te': '＋ రెండవ సంరక్షకుడిని జోడించండి',
+      'hi': '＋ दूसरा देखभालकर्ता जोड़ें',
+      'ta': '＋ இரண்டாவது பராமரிப்பாளரை சேர்க்கவும்'
     },
     'continue': {
       'en': 'Continue →',
@@ -104,6 +148,24 @@ class _CaregiverSetupScreenState extends State<CaregiverSetupScreen> {
       'hi': 'चरण 4/5',
       'ta': 'படி 4/5'
     },
+    'name_required': {
+      'en': 'Caregiver name is required',
+      'te': 'సంరక్షకుడి పేరు అవసరం',
+      'hi': 'देखभालकर्ता का नाम आवश्यक है',
+      'ta': 'பராமரிப்பாளரின் பெயர் தேவை'
+    },
+    'phone_required': {
+      'en': 'Phone number is required',
+      'te': 'ఫోన్ నంబర్ అవసరం',
+      'hi': 'फ़ोन नंबर आवश्यक है',
+      'ta': 'தொலைபேசி எண் தேவை'
+    },
+    'phone_invalid': {
+      'en': 'Enter valid 10-digit phone number',
+      'te': 'చెల్లుబాటు అయ్యే 10 అంకెల ఫోన్ నంబర్ నమోదు చేయండి',
+      'hi': '10 अंकों का वैध फ़ोन नंबर दर्ज करें',
+      'ta': 'சரியான 10 இலக்க தொலைபேசி எண்ணை உள்ளிடுங்கள்'
+    },
   };
 
   String _label(String key, String lang) =>
@@ -116,10 +178,38 @@ class _CaregiverSetupScreenState extends State<CaregiverSetupScreen> {
     super.dispose();
   }
 
+  void _continue(String lang) {
+    setState(() {
+      _nameError = _nameController.text.trim().isEmpty;
+      _phoneError = _phoneController.text.trim().isEmpty ||
+          _phoneController.text.trim().length < 10;
+    });
+
+    if (_nameError) {
+      _showError(_label('name_required', lang));
+      return;
+    }
+    if (_phoneError) {
+      _showError(_phoneController.text.trim().isEmpty
+          ? _label('phone_required', lang)
+          : _label('phone_invalid', lang));
+      return;
+    }
+    context.go(AppRoutes.accessibility);
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: AppTheme.error),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final lang = context.watch<LanguageProvider>().language;
     final font = LanguageProvider.getFontFamily(lang);
+    final fontSize = context.watch<LanguageProvider>().fontSize;
+
     return Scaffold(
       backgroundColor: AppTheme.background,
       body: SafeArea(
@@ -153,9 +243,10 @@ class _CaregiverSetupScreenState extends State<CaregiverSetupScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               LangText(_label('title', lang), lang,
-                                  fontSize: 16, fontWeight: FontWeight.bold),
+                                  fontSize: fontSize,
+                                  fontWeight: FontWeight.bold),
                               LangText(_label('sub', lang), lang,
-                                  fontSize: 11, color: AppTheme.grey),
+                                  fontSize: fontSize - 3, color: AppTheme.grey),
                             ],
                           ),
                         ),
@@ -172,20 +263,60 @@ class _CaregiverSetupScreenState extends State<CaregiverSetupScreen> {
                             color: AppTheme.error.withValues(alpha: 0.2)),
                       ),
                       child: LangText(_label('sos_info', lang), lang,
-                          fontSize: 12, color: AppTheme.grey),
+                          fontSize: fontSize - 3, color: AppTheme.grey),
                     ),
                     const SizedBox(height: 14),
+
                     // Name field
                     LangText('${_label('name', lang)} *', lang,
-                        fontSize: 11,
-                        color: AppTheme.grey,
+                        fontSize: fontSize - 3,
+                        color: _nameError ? AppTheme.error : AppTheme.grey,
                         fontWeight: FontWeight.w600),
                     const SizedBox(height: 4),
-                    _inputField(_nameController, Icons.person, font),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: AppTheme.card,
+                        borderRadius: BorderRadius.circular(11),
+                        border: Border.all(
+                          color: _nameError
+                              ? AppTheme.error
+                              : _nameController.text.isNotEmpty
+                                  ? AppTheme.teal.withValues(alpha: 0.8)
+                                  : AppTheme.grey.withValues(alpha: 0.3),
+                        ),
+                      ),
+                      child: TextField(
+                        controller: _nameController,
+                        style: TextStyle(
+                            fontFamily: font,
+                            color: AppTheme.white,
+                            fontSize: fontSize - 2),
+                        onChanged: (_) => setState(() => _nameError = false),
+                        decoration: InputDecoration(
+                          prefixIcon: const Icon(Icons.person,
+                              color: AppTheme.accent, size: 20),
+                          suffixIcon: _nameController.text.isNotEmpty
+                              ? const Icon(Icons.check,
+                                  color: AppTheme.teal, size: 16)
+                              : const Icon(Icons.error_outline,
+                                  color: AppTheme.error, size: 16),
+                          border: InputBorder.none,
+                          contentPadding: const EdgeInsets.symmetric(
+                              vertical: 12, horizontal: 8),
+                        ),
+                      ),
+                    ),
+                    if (_nameError)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4, left: 4),
+                        child: LangText(_label('name_required', lang), lang,
+                            fontSize: fontSize - 5, color: AppTheme.error),
+                      ),
                     const SizedBox(height: 12),
+
                     // Relationship
                     LangText(_label('relation', lang), lang,
-                        fontSize: 11,
+                        fontSize: fontSize - 3,
                         color: AppTheme.grey,
                         fontWeight: FontWeight.w600),
                     const SizedBox(height: 8),
@@ -195,8 +326,8 @@ class _CaregiverSetupScreenState extends State<CaregiverSetupScreen> {
                       children: _relations.map((r) {
                         final isSelected = _selectedRelation == r['key'];
                         return GestureDetector(
-                          onTap: () =>
-                              setState(() => _selectedRelation = r['key']!),
+                          onTap: () => setState(
+                              () => _selectedRelation = r['key'] as String),
                           child: Container(
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 12, vertical: 7),
@@ -213,9 +344,9 @@ class _CaregiverSetupScreenState extends State<CaregiverSetupScreen> {
                               ),
                             ),
                             child: LangText(
-                              r[lang] ?? r['en']!,
+                              r[lang] as String? ?? r['en'] as String,
                               lang,
-                              fontSize: 12,
+                              fontSize: fontSize - 3,
                               fontWeight: FontWeight.w600,
                               color:
                                   isSelected ? AppTheme.accent : AppTheme.grey,
@@ -225,15 +356,62 @@ class _CaregiverSetupScreenState extends State<CaregiverSetupScreen> {
                       }).toList(),
                     ),
                     const SizedBox(height: 12),
+
                     // Phone
                     LangText('${_label('phone', lang)} *', lang,
-                        fontSize: 11,
-                        color: AppTheme.grey,
+                        fontSize: fontSize - 3,
+                        color: _phoneError ? AppTheme.error : AppTheme.grey,
                         fontWeight: FontWeight.w600),
                     const SizedBox(height: 4),
-                    _inputField(_phoneController, Icons.phone, font,
-                        isPhone: true),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: AppTheme.card,
+                        borderRadius: BorderRadius.circular(11),
+                        border: Border.all(
+                          color: _phoneError
+                              ? AppTheme.error
+                              : _phoneController.text.isNotEmpty
+                                  ? AppTheme.teal.withValues(alpha: 0.8)
+                                  : AppTheme.grey.withValues(alpha: 0.3),
+                        ),
+                      ),
+                      child: TextField(
+                        controller: _phoneController,
+                        keyboardType: TextInputType.phone,
+                        style: TextStyle(
+                            fontFamily: font,
+                            color: AppTheme.white,
+                            fontSize: fontSize - 2),
+                        onChanged: (_) => setState(() => _phoneError = false),
+                        decoration: InputDecoration(
+                          prefixIcon: const Icon(Icons.phone,
+                              color: AppTheme.accent, size: 20),
+                          suffixIcon: _phoneController.text.length >= 10
+                              ? const Icon(Icons.check,
+                                  color: AppTheme.teal, size: 16)
+                              : _phoneController.text.isNotEmpty
+                                  ? const Icon(Icons.error_outline,
+                                      color: AppTheme.error, size: 16)
+                                  : null,
+                          border: InputBorder.none,
+                          contentPadding: const EdgeInsets.symmetric(
+                              vertical: 12, horizontal: 8),
+                        ),
+                      ),
+                    ),
+                    if (_phoneError)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4, left: 4),
+                        child: LangText(
+                            _phoneController.text.trim().isEmpty
+                                ? _label('phone_required', lang)
+                                : _label('phone_invalid', lang),
+                            lang,
+                            fontSize: fontSize - 5,
+                            color: AppTheme.error),
+                      ),
                     const SizedBox(height: 12),
+
                     // Add second caregiver
                     Container(
                       width: double.infinity,
@@ -242,18 +420,17 @@ class _CaregiverSetupScreenState extends State<CaregiverSetupScreen> {
                         color: AppTheme.card,
                         borderRadius: BorderRadius.circular(10),
                         border: Border.all(
-                          color: AppTheme.grey.withValues(alpha: 0.2),
-                          style: BorderStyle.solid,
-                        ),
+                            color: AppTheme.grey.withValues(alpha: 0.2)),
                       ),
                       child: Center(
                         child: LangText(_label('add_second', lang), lang,
-                            fontSize: 13, color: AppTheme.grey),
+                            fontSize: fontSize - 3, color: AppTheme.grey),
                       ),
                     ),
                     const SizedBox(height: 20),
+
                     GestureDetector(
-                      onTap: () => context.go(AppRoutes.accessibility),
+                      onTap: () => _continue(lang),
                       child: Container(
                         width: double.infinity,
                         padding: const EdgeInsets.symmetric(vertical: 14),
@@ -264,14 +441,14 @@ class _CaregiverSetupScreenState extends State<CaregiverSetupScreen> {
                         ),
                         child: Center(
                           child: LangText(_label('continue', lang), lang,
-                              fontSize: 16, fontWeight: FontWeight.bold),
+                              fontSize: fontSize, fontWeight: FontWeight.bold),
                         ),
                       ),
                     ),
                     const SizedBox(height: 8),
                     Center(
                       child: LangText(_label('step', lang), lang,
-                          fontSize: 12, color: AppTheme.grey),
+                          fontSize: fontSize - 4, color: AppTheme.grey),
                     ),
                   ],
                 ),
@@ -304,30 +481,6 @@ class _CaregiverSetupScreenState extends State<CaregiverSetupScreen> {
                     ),
                   ),
                 )),
-      ),
-    );
-  }
-
-  Widget _inputField(
-      TextEditingController controller, IconData icon, String font,
-      {bool isPhone = false}) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppTheme.card,
-        borderRadius: BorderRadius.circular(11),
-        border: Border.all(color: AppTheme.teal.withValues(alpha: 0.5)),
-      ),
-      child: TextField(
-        controller: controller,
-        keyboardType: isPhone ? TextInputType.phone : TextInputType.text,
-        style: TextStyle(fontFamily: font, color: AppTheme.white, fontSize: 14),
-        decoration: InputDecoration(
-          prefixIcon: Icon(icon, color: AppTheme.accent, size: 20),
-          suffixIcon: const Icon(Icons.check, color: AppTheme.teal, size: 16),
-          border: InputBorder.none,
-          contentPadding:
-              const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-        ),
       ),
     );
   }

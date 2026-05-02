@@ -3,205 +3,293 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:medilens/core/theme.dart';
 import 'package:medilens/core/routes.dart';
+import 'package:medilens/core/lang_text.dart';
+import 'package:medilens/core/app_data.dart';
 import 'package:medilens/providers/language_provider.dart';
 
-class ExpiryTrackerScreen extends StatefulWidget {
+class ExpiryTrackerScreen extends StatelessWidget {
   const ExpiryTrackerScreen({super.key});
-
-  @override
-  State<ExpiryTrackerScreen> createState() => _ExpiryTrackerScreenState();
-}
-
-class _ExpiryTrackerScreenState extends State<ExpiryTrackerScreen> {
-  final List<Map<String, dynamic>> _medicines = [
-    {
-      'name': 'Paracetamol',
-      'brand': 'Crocin',
-      'expiry': DateTime(2025, 8, 15),
-      'quantity': 10
-    },
-    {
-      'name': 'Metformin',
-      'brand': 'Glycomet',
-      'expiry': DateTime(2024, 12, 31),
-      'quantity': 30
-    },
-    {
-      'name': 'Amlodipine',
-      'brand': 'Amlokind',
-      'expiry': DateTime(2026, 3, 20),
-      'quantity': 15
-    },
-    {
-      'name': 'Aspirin',
-      'brand': 'Ecosprin',
-      'expiry': DateTime(2024, 11, 10),
-      'quantity': 5
-    },
-    {
-      'name': 'Omeprazole',
-      'brand': 'Omez',
-      'expiry': DateTime(2025, 6, 30),
-      'quantity': 20
-    },
-    {
-      'name': 'Atorvastatin',
-      'brand': 'Atorva',
-      'expiry': DateTime(2026, 1, 15),
-      'quantity': 25
-    },
-  ];
-
-  final Map<String, Map<String, String>> _labels = {
-    'title': {
-      'en': 'Expiry Tracker',
-      'te': 'గడువు ట్రాకర్',
-      'hi': 'समाप्ति ट्रैकर',
-      'ta': 'காலாவதி கண்காணிப்பு'
-    },
-    'expired': {
-      'en': 'Expired',
-      'te': 'గడువు తీరింది',
-      'hi': 'समाप्त हो गई',
-      'ta': 'காலாவதியானது'
-    },
-    'expiring_soon': {
-      'en': 'Expiring Soon',
-      'te': 'త్వరలో గడువు తీరుతోంది',
-      'hi': 'जल्द समाप्त होगी',
-      'ta': 'விரைவில் காலாவதியாகும்'
-    },
-    'good': {'en': 'Good', 'te': 'మంచిది', 'hi': 'अच्छी', 'ta': 'நல்லது'},
-    'qty': {'en': 'Qty', 'te': 'పరిమాణం', 'hi': 'मात्रा', 'ta': 'அளவு'},
-    'add': {
-      'en': 'Add Medicine',
-      'te': 'మందు జోడించండి',
-      'hi': 'दवा जोड़ें',
-      'ta': 'மருந்தை சேர்க்கவும்'
-    },
-    'expires': {
-      'en': 'Expires',
-      'te': 'గడువు',
-      'hi': 'समाप्ति',
-      'ta': 'காலாவதி'
-    },
-    'days_left': {
-      'en': 'days left',
-      'te': 'రోజులు మిగిలాయి',
-      'hi': 'दिन बचे हैं',
-      'ta': 'நாட்கள் மீதம்'
-    },
-  };
-
-  String _label(String key, String lang) =>
-      _labels[key]?[lang] ?? _labels[key]?['en'] ?? key;
-
-  int _daysUntilExpiry(DateTime expiry) {
-    return expiry.difference(DateTime.now()).inDays;
-  }
-
-  Color _expiryColor(int days) {
-    if (days < 0) return AppTheme.error;
-    if (days <= 30) return AppTheme.warning;
-    return AppTheme.success;
-  }
-
-  String _expiryStatus(int days, String lang) {
-    if (days < 0) return _label('expired', lang);
-    if (days <= 30) return _label('expiring_soon', lang);
-    return _label('good', lang);
-  }
 
   @override
   Widget build(BuildContext context) {
     final lang = context.watch<LanguageProvider>().language;
-    final now = DateTime.now();
+    final font = LanguageProvider.getFontFamily(lang);
+    final appData = context.watch<AppData>();
+    final medicines = appData.cabinet;
 
-    final expired = _medicines
-        .where((m) => (m['expiry'] as DateTime).isBefore(now))
-        .toList();
-    final expiringSoon = _medicines.where((m) {
-      final days = _daysUntilExpiry(m['expiry'] as DateTime);
-      return days >= 0 && days <= 30;
-    }).toList();
-    final good = _medicines
-        .where((m) => _daysUntilExpiry(m['expiry'] as DateTime) > 30)
-        .toList();
+    final Map<String, Map<String, String>> labels = {
+      'title': {
+        'en': '📅 Expiry Tracker',
+        'te': '📅 గడువు ట్రాకర్',
+        'hi': '📅 समाप्ति ट्रैकर',
+        'ta': '📅 காலாவதி கண்காணிப்பு'
+      },
+      'sub': {
+        'en': 'Monitor all medicine expiry dates',
+        'te': 'అన్ని మందుల గడువు తేదీలు పర్యవేక్షించండి',
+        'hi': 'सभी दवाओं की समाप्ति तिथि देखें',
+        'ta': 'அனைத்து மருந்துகளின் காலாவதி தேதிகளை கண்காணிக்கவும்'
+      },
+      'overview': {
+        'en': 'OVERVIEW',
+        'te': 'అవలోకనం',
+        'hi': 'अवलोकन',
+        'ta': 'கண்ணோட்டம்'
+      },
+      'valid': {
+        'en': 'Valid',
+        'te': 'చెల్లుబాటు',
+        'hi': 'वैध',
+        'ta': 'செல்லுபடியாகும்'
+      },
+      'expiring': {
+        'en': 'Expiring Soon',
+        'te': 'త్వరలో గడువు',
+        'hi': 'जल्द समाप्त',
+        'ta': 'விரைவில் காலாவதி'
+      },
+      'expired': {
+        'en': 'Expired',
+        'te': 'గడువు తీరింది',
+        'hi': 'समाप्त',
+        'ta': 'காலாவதியானது'
+      },
+      'all': {
+        'en': 'All Medicines',
+        'te': 'అన్ని మందులు',
+        'hi': 'सभी दवाएं',
+        'ta': 'அனைத்து மருந்துகள்'
+      },
+      'empty': {
+        'en': 'No medicines to track.\nScan a medicine to track its expiry.',
+        'te':
+            'ట్రాక్ చేయడానికి మందులు లేవు.\nమందు స్కాన్ చేసి గడువు ట్రాక్ చేయండి.',
+        'hi':
+            'ट्रैक करने के लिए कोई दवा नहीं।\nदवा स्कैन करके एक्सपायरी ट्रैक करें।',
+        'ta':
+            'கண்காணிக்க மருந்துகள் இல்லை.\nமருந்தை ஸ்கேன் செய்து காலாவதியை கண்காணிக்கவும்.'
+      },
+      'scan_add': {
+        'en': 'Scan to Add Medicine',
+        'te': 'మందు జోడించడానికి స్కాన్ చేయండి',
+        'hi': 'दवा जोड़ने के लिए स्कैन करें',
+        'ta': 'மருந்து சேர்க்க ஸ்கேன் செய்யுங்கள்'
+      },
+      'nav_home': {'en': 'Home', 'te': 'హోమ్', 'hi': 'होम', 'ta': 'முகப்பு'},
+      'nav_scan': {'en': 'Scan', 'te': 'స్కాన్', 'hi': 'स्कैन', 'ta': 'ஸ்கேன்'},
+      'nav_cabinet': {
+        'en': 'Cabinet',
+        'te': 'పెట్టె',
+        'hi': 'कैबिनेट',
+        'ta': 'பெட்டி'
+      },
+      'nav_reminders': {
+        'en': 'Reminders',
+        'te': 'రిమైండర్లు',
+        'hi': 'रिमाइंडर',
+        'ta': 'நினைவூட்டல்'
+      },
+      'nav_settings': {
+        'en': 'Settings',
+        'te': 'సెట్టింగులు',
+        'hi': 'सेटिंग्s',
+        'ta': 'அமைப்புகள்'
+      },
+    };
+
+    String label(String key) => labels[key]?[lang] ?? labels[key]?['en'] ?? key;
 
     return Scaffold(
       backgroundColor: AppTheme.background,
-      appBar: AppBar(
-        backgroundColor: AppTheme.background,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppTheme.white),
-          onPressed: () => context.go(AppRoutes.home),
-        ),
-        title: Text(_label('title', lang),
-            style: const TextStyle(
-                color: AppTheme.white, fontWeight: FontWeight.bold)),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add, color: AppTheme.white),
-            onPressed: () => _showAddDialog(context, lang),
-          ),
-        ],
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+      body: Stack(
+        children: [
+          SafeArea(
+            child: Column(
               children: [
-                _summaryCard(_label('expired', lang), expired.length.toString(),
-                    AppTheme.error),
-                const SizedBox(width: 12),
-                _summaryCard(_label('expiring_soon', lang),
-                    expiringSoon.length.toString(), AppTheme.warning),
-                const SizedBox(width: 12),
-                _summaryCard(_label('good', lang), good.length.toString(),
-                    AppTheme.success),
+                Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  child: Row(
+                    children: [
+                      GestureDetector(
+                        onTap: () => context.go(AppRoutes.home),
+                        child: Container(
+                          width: 30,
+                          height: 30,
+                          decoration: BoxDecoration(
+                            color: AppTheme.card,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(Icons.arrow_back,
+                              color: AppTheme.white, size: 18),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            LangText(label('title'), lang,
+                                fontSize: 16, fontWeight: FontWeight.bold),
+                            LangText(label('sub'), lang,
+                                fontSize: 11, color: AppTheme.grey),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(14, 4, 14, 100),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Overview card
+                        Container(
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF1A2235), Color(0xFF1F2A40)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                                color: AppTheme.grey.withValues(alpha: 0.15)),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(label('overview'),
+                                  style: TextStyle(
+                                      fontFamily: font,
+                                      color: AppTheme.grey,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                      letterSpacing: 0.8)),
+                              const SizedBox(height: 12),
+                              Row(
+                                children: [
+                                  _overviewCard(appData.validCount.toString(),
+                                      label('valid'), AppTheme.success, lang),
+                                  const SizedBox(width: 8),
+                                  _overviewCard(
+                                      appData.expiringCount.toString(),
+                                      label('expiring'),
+                                      AppTheme.warning,
+                                      lang),
+                                  const SizedBox(width: 8),
+                                  _overviewCard(appData.expiredCount.toString(),
+                                      label('expired'), AppTheme.error, lang),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(label('all'),
+                            style: TextStyle(
+                                fontFamily: font,
+                                color: AppTheme.grey,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: 0.8)),
+                        const SizedBox(height: 8),
+                        if (medicines.isEmpty)
+                          Center(
+                            child: Padding(
+                              padding: const EdgeInsets.only(top: 40),
+                              child: Column(
+                                children: [
+                                  const Icon(Icons.calendar_today,
+                                      color: AppTheme.grey, size: 64),
+                                  const SizedBox(height: 16),
+                                  LangText(label('empty'), lang,
+                                      fontSize: 14,
+                                      color: AppTheme.grey,
+                                      textAlign: TextAlign.center),
+                                  const SizedBox(height: 24),
+                                  GestureDetector(
+                                    onTap: () => context.go(AppRoutes.scan),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 24, vertical: 12),
+                                      decoration: BoxDecoration(
+                                        gradient: const LinearGradient(colors: [
+                                          AppTheme.accent,
+                                          AppTheme.teal
+                                        ]),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          const Icon(Icons.camera_alt,
+                                              color: AppTheme.white, size: 20),
+                                          const SizedBox(width: 8),
+                                          LangText(label('scan_add'), lang,
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.bold),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          )
+                        else
+                          ...medicines.map((m) => _medicineCard(m, lang)),
+                      ],
+                    ),
+                  ),
+                ),
               ],
             ),
-            const SizedBox(height: 24),
-            if (expired.isNotEmpty) ...[
-              _sectionHeader(_label('expired', lang), AppTheme.error),
-              const SizedBox(height: 8),
-              ...expired.map((m) => _medicineCard(m, lang)),
-              const SizedBox(height: 16),
-            ],
-            if (expiringSoon.isNotEmpty) ...[
-              _sectionHeader(_label('expiring_soon', lang), AppTheme.warning),
-              const SizedBox(height: 8),
-              ...expiringSoon.map((m) => _medicineCard(m, lang)),
-              const SizedBox(height: 16),
-            ],
-            if (good.isNotEmpty) ...[
-              _sectionHeader(_label('good', lang), AppTheme.success),
-              const SizedBox(height: 8),
-              ...good.map((m) => _medicineCard(m, lang)),
-            ],
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showAddDialog(context, lang),
-        backgroundColor: AppTheme.accent,
-        icon: const Icon(Icons.add, color: AppTheme.white),
-        label: Text(_label('add', lang),
-            style: const TextStyle(color: AppTheme.white)),
+          ),
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              height: 70,
+              decoration: BoxDecoration(
+                color: AppTheme.card,
+                border: Border(
+                    top: BorderSide(
+                        color: AppTheme.grey.withValues(alpha: 0.2))),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _navItem(Icons.home, label('nav_home'), false,
+                      () => context.go(AppRoutes.home), font),
+                  _navItem(Icons.qr_code_scanner, label('nav_scan'), false,
+                      () => context.go(AppRoutes.scan), font),
+                  _navItem(Icons.medical_services, label('nav_cabinet'), false,
+                      () => context.go(AppRoutes.cabinet), font),
+                  _navItem(Icons.alarm, label('nav_reminders'), false,
+                      () => context.go(AppRoutes.reminders), font),
+                  _navItem(Icons.settings, label('nav_settings'), false,
+                      () => context.go(AppRoutes.settings), font),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _summaryCard(String label, String count, Color color) {
+  Widget _overviewCard(String count, String label, Color color, String lang) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.15),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: color.withValues(alpha: 0.3)),
+          color: color.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: color.withValues(alpha: 0.2)),
         ),
         child: Column(
           children: [
@@ -209,8 +297,9 @@ class _ExpiryTrackerScreenState extends State<ExpiryTrackerScreen> {
                 style: TextStyle(
                     color: color, fontSize: 24, fontWeight: FontWeight.bold)),
             const SizedBox(height: 4),
-            Text(label,
-                style: TextStyle(color: color, fontSize: 11),
+            LangText(label, lang,
+                fontSize: 11,
+                color: Colors.white70,
                 textAlign: TextAlign.center),
           ],
         ),
@@ -218,63 +307,54 @@ class _ExpiryTrackerScreenState extends State<ExpiryTrackerScreen> {
     );
   }
 
-  Widget _sectionHeader(String title, Color color) {
-    return Row(
-      children: [
-        Container(
-            width: 4,
-            height: 20,
-            decoration: BoxDecoration(
-                color: color, borderRadius: BorderRadius.circular(2))),
-        const SizedBox(width: 8),
-        Text(title,
-            style: TextStyle(
-                color: color, fontSize: 16, fontWeight: FontWeight.bold)),
-      ],
-    );
-  }
-
-  Widget _medicineCard(Map<String, dynamic> medicine, String lang) {
-    final days = _daysUntilExpiry(medicine['expiry'] as DateTime);
-    final color = _expiryColor(days);
-    final status = _expiryStatus(days, lang);
-    final expiry = medicine['expiry'] as DateTime;
+  Widget _medicineCard(MedicineEntry medicine, String lang) {
+    final color = medicine.expiryStatus == 'valid'
+        ? AppTheme.success
+        : medicine.expiryStatus == 'expiring'
+            ? AppTheme.warning
+            : AppTheme.error;
+    final timeLeft = AppData.getTimeLeft(medicine.expiryDate);
+    final progress = medicine.expiryStatus == 'valid'
+        ? 0.75
+        : medicine.expiryStatus == 'expiring'
+            ? 0.15
+            : 1.0;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: AppTheme.card,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withValues(alpha: 0.2)),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+            color: medicine.expiryStatus == 'expired'
+                ? AppTheme.error.withValues(alpha: 0.3)
+                : AppTheme.grey.withValues(alpha: 0.15)),
       ),
       child: Row(
         children: [
           Container(
-            width: 48,
-            height: 48,
+            width: 34,
+            height: 34,
             decoration: BoxDecoration(
               color: color.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(9),
             ),
-            child: Icon(Icons.medication, color: color, size: 26),
+            child:
+                const Center(child: Text('💊', style: TextStyle(fontSize: 16))),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(medicine['name'],
+                Text(medicine.name,
                     style: const TextStyle(
                         color: AppTheme.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 15)),
-                Text(medicine['brand'],
-                    style: const TextStyle(color: AppTheme.grey, fontSize: 13)),
-                const SizedBox(height: 4),
-                Text(
-                    '${_label('expires', lang)}: ${expiry.day}/${expiry.month}/${expiry.year}',
-                    style: const TextStyle(color: AppTheme.grey, fontSize: 12)),
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14)),
+                Text('Exp: ${medicine.expiryDate}',
+                    style: TextStyle(color: color, fontSize: 12)),
               ],
             ),
           ),
@@ -282,23 +362,29 @@ class _ExpiryTrackerScreenState extends State<ExpiryTrackerScreen> {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
                   color: color.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(6),
+                  borderRadius: BorderRadius.circular(20),
                 ),
-                child: Text(status,
+                child: Text(timeLeft,
                     style: TextStyle(
                         color: color,
                         fontSize: 11,
-                        fontWeight: FontWeight.bold)),
+                        fontWeight: FontWeight.w600)),
               ),
-              const SizedBox(height: 4),
-              Text(
-                days < 0
-                    ? '${days.abs()} ${_label('days_left', lang)}'
-                    : '$days ${_label('days_left', lang)}',
-                style: TextStyle(color: color, fontSize: 11),
+              const SizedBox(height: 6),
+              SizedBox(
+                width: 56,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(2),
+                  child: LinearProgressIndicator(
+                    value: progress,
+                    backgroundColor: AppTheme.grey.withValues(alpha: 0.2),
+                    valueColor: AlwaysStoppedAnimation(color),
+                    minHeight: 3,
+                  ),
+                ),
               ),
             ],
           ),
@@ -307,65 +393,28 @@ class _ExpiryTrackerScreenState extends State<ExpiryTrackerScreen> {
     );
   }
 
-  void _showAddDialog(BuildContext context, String lang) {
-    final nameController = TextEditingController();
-    final brandController = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppTheme.card,
-        title: Text(_label('add', lang),
-            style: const TextStyle(color: AppTheme.white)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
+  Widget _navItem(IconData icon, String label, bool isActive,
+      VoidCallback onTap, String font) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            TextField(
-              controller: nameController,
-              style: const TextStyle(color: AppTheme.white),
-              decoration: const InputDecoration(
-                hintText: 'Medicine name',
-                hintStyle: TextStyle(color: AppTheme.grey),
-                enabledBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: AppTheme.grey)),
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: brandController,
-              style: const TextStyle(color: AppTheme.white),
-              decoration: const InputDecoration(
-                hintText: 'Brand name',
-                hintStyle: TextStyle(color: AppTheme.grey),
-                enabledBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: AppTheme.grey)),
-              ),
-            ),
+            Icon(icon,
+                color: isActive ? AppTheme.accent : AppTheme.grey, size: 26),
+            const SizedBox(height: 4),
+            Text(label,
+                style: TextStyle(
+                  fontFamily: font,
+                  color: isActive ? AppTheme.accent : AppTheme.grey,
+                  fontSize: 11,
+                  fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+                )),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel', style: TextStyle(color: AppTheme.grey)),
-          ),
-          TextButton(
-            onPressed: () {
-              if (nameController.text.isNotEmpty) {
-                setState(() => _medicines.add({
-                      'name': nameController.text,
-                      'brand': brandController.text,
-                      'expiry': DateTime.now().add(const Duration(days: 365)),
-                      'quantity': 0,
-                    }));
-              }
-              Navigator.pop(ctx);
-            },
-            child: Text(_label('add', lang),
-                style: const TextStyle(color: AppTheme.accent)),
-          ),
-        ],
       ),
     );
   }
 }
-
-
