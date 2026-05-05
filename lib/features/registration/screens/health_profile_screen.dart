@@ -1,4 +1,5 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:medilens/core/theme.dart';
@@ -140,6 +141,30 @@ class _HealthProfileScreenState extends State<HealthProfileScreen> {
     super.dispose();
   }
 
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: AppTheme.error),
+    );
+  }
+
+  void _continue(String lang) {
+    final name = _doctorNameController.text.trim();
+    final phone = _doctorPhoneController.text.trim();
+
+    if (name.isNotEmpty && name.length < 2) {
+      _showError(lang == 'en' ? 'Enter a valid doctor name' : 'సరైన పేరు నమోదు చేయండి');
+      return;
+    }
+    if (phone.isNotEmpty && !RegExp(r'^[6-9]\d{9}$').hasMatch(phone)) {
+      _showError(lang == 'en' ? 'Enter a valid 10-digit phone number' : 'చెల్లుబాటు అయ్యే 10 అంకెల ఫోన్ నంబర్ నమోదు చేయండి');
+      return;
+    }
+
+    // Currently Health Profile doesn't persist this data, 
+    // but we ensure it's valid if they chose to type it.
+    context.go(AppRoutes.caregiverSetup);
+  }
+
   @override
   Widget build(BuildContext context) {
     final lang = context.watch<LanguageProvider>().language;
@@ -276,7 +301,7 @@ class _HealthProfileScreenState extends State<HealthProfileScreen> {
                         isPhone: true),
                     const SizedBox(height: 20),
                     GestureDetector(
-                      onTap: () => context.go(AppRoutes.caregiverSetup),
+                      onTap: () => _continue(lang),
                       child: Container(
                         width: double.infinity,
                         padding: const EdgeInsets.symmetric(vertical: 14),
@@ -349,12 +374,18 @@ class _HealthProfileScreenState extends State<HealthProfileScreen> {
           child: TextField(
             controller: controller,
             keyboardType: isPhone ? TextInputType.phone : TextInputType.text,
+            inputFormatters: isPhone ? [
+              FilteringTextInputFormatter.digitsOnly,
+              LengthLimitingTextInputFormatter(10),
+            ] : [],
+            onChanged: (_) => setState(() {}),
             style: TextStyle(
                 fontFamily: font, color: AppTheme.white, fontSize: 14),
             decoration: InputDecoration(
               prefixIcon: Icon(icon, color: AppTheme.accent, size: 20),
-              suffixIcon:
-                  const Icon(Icons.check, color: AppTheme.teal, size: 16),
+              suffixIcon: controller.text.trim().length >= (isPhone ? 10 : 2) && (!isPhone || RegExp(r'^[6-9]\d{9}$').hasMatch(controller.text))
+                  ? const Icon(Icons.check, color: AppTheme.teal, size: 16)
+                  : controller.text.isNotEmpty ? const Icon(Icons.error_outline, color: AppTheme.error, size: 16) : null,
               border: InputBorder.none,
               contentPadding:
                   const EdgeInsets.symmetric(vertical: 12, horizontal: 8),

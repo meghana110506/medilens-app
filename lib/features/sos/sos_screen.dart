@@ -1,5 +1,8 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_sms/flutter_sms.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:medilens/core/theme.dart';
@@ -51,6 +54,12 @@ class _SosScreenState extends State<SosScreen>
   String _label(String key, String lang) =>
       _labels[key]?[lang] ?? _labels[key]?['en'] ?? key;
 
+  /// Relation is stored as a key (e.g. `daughter`); show a readable label.
+  String _prettyRelation(String key) {
+    if (key.isEmpty) return '';
+    return '${key[0].toUpperCase()}${key.substring(1)}';
+  }
+
   @override
   void initState() {
     super.initState();
@@ -59,6 +68,10 @@ class _SosScreenState extends State<SosScreen>
       ..repeat(reverse: true);
     _pulseAnim = Tween<double>(begin: 0.92, end: 1.08)
         .animate(CurvedAnimation(parent: _pulseCtrl, curve: Curves.easeInOut));
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      context.read<LanguageProvider>().reloadCaregiverFromDisk();
+    });
   }
 
   @override
@@ -69,34 +82,94 @@ class _SosScreenState extends State<SosScreen>
 
   Future<void> _sendSOS(String lang) async {
     final provider = context.read<LanguageProvider>();
-    final phone = provider.caregiverPhone.isEmpty
-        ? '+919876511111' : provider.caregiverPhone;
-    final patientName = provider.userName.isEmpty
-        ? 'Patient' : provider.userName;
+    final phone = provider.caregiverPhone.trim().isEmpty
+        ? '+919876511111'
+        : provider.caregiverPhone.trim();
+    final patientName =
+        provider.userName.trim().isEmpty ? 'Patient' : provider.userName.trim();
 
+    // Play voice alert first (bilingual)
     await provider.speak(
-        lang == 'te' ? 'అత్యవసర సహాయం కోసం కాల్ చేస్తున్నాం'
-        : lang == 'hi' ? 'आपातकालीन सहायता के लिए कॉल कर रहे हैं'
-        : lang == 'ta' ? 'அவசர உதவிக்கு அழைக்கிறோம்'
-        : 'Sending emergency SOS alert');
-
-    final message = Uri.encodeComponent(
-        'EMERGENCY SOS from MediLens!\n'
-        'Patient: $patientName needs immediate help.\n'
-        'Please call immediately!\n'
-        'Sent from MediLens Safety App.');
-
-    final smsUri = Uri.parse('sms:$phone?body=$message');
-
-    try {
-      if (await canLaunchUrl(smsUri)) {
-        await launchUrl(smsUri);
-      }
-    } catch (e) {
-      debugPrint('SMS launch error: $e');
+      lang == 'te'
+          ? 'అత్యవసర సహాయం కోసం పంపుతున్నాం'
+          : lang == 'hi'
+              ? 'आपातकालीन सहायता के लिए संदेश भेज रहे हैं'
+              : lang == 'ta'
+                  ? 'அவசர உதவிக்கு செய்தி அனுப்புகிறோம்'
+                  : 'Sending emergency SOS alert',
+    );
+    if (provider.bilingualEnabled && lang != 'en') {
+      await provider.speakInLanguage('Emergency SOS sent to your caregiver.', 'en');
     }
 
-    setState(() => _sosSent = true);
+    // Build SMS body
+    var body = 'EMERGENCY SOS from MediLens!\n'
+        'Patient: $patientName needs immediate help.\n'
+        'Please call immediately!\n'
+        'Sent from MediLens Safety App.';
+
+    // Append GPS location if available
+    try {
+      var perm = await Geolocator.checkPermission();
+      if (perm == LocationPermission.denied) {
+        perm = await Geolocator.requestPermission();
+      }
+      if (perm == LocationPermission.whileInUse ||
+          perm == LocationPermission.always) {
+        final pos = await Geolocator.getCurrentPosition(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.high,
+            timeLimit: Duration(seconds: 12),
+          ),
+        );
+        final lat = pos.latitude.toStringAsFixed(6);
+        final lng = pos.longitude.toStringAsFixed(6);
+        body += '\n\nApprox. location (GPS):\n'
+            'https://www.google.com/maps?q=$lat,$lng';
+      } else {
+        body += '\n\n(Location currently unavailable - permission denied)';
+      }
+    } catch (e) {
+      debugPrint('SOS location: $e');
+      body += '\n\n(Location currently unavailable)';
+    }
+
+    bool smsSent = false;
+
+    // --- Attempt 1: Direct send via flutter_sms (no user interaction needed) ---
+    try {
+      final smsPerm = await Permission.sms.request();
+      if (smsPerm.isGranted) {
+        final result = await sendSMS(
+          message: body,
+          recipients: [phone],
+          sendDirect: true, // send without opening SMS app
+        );
+        debugPrint('flutter_sms result: $result');
+        smsSent = true;
+      }
+    } catch (e) {
+      debugPrint('flutter_sms direct send failed: $e');
+    }
+
+    // --- Attempt 2: Fallback — open SMS compose screen ---
+    if (!smsSent) {
+      try {
+        final encoded = Uri.encodeComponent(body);
+        final smsUri = Uri.parse('sms:$phone?body=$encoded');
+        if (await canLaunchUrl(smsUri)) {
+          await launchUrl(smsUri);
+          smsSent = true;
+        }
+      } catch (e) {
+        debugPrint('SMS url_launcher fallback error: $e');
+      }
+    }
+
+    // Show SOS sent overlay (only after actual send / fallback attempted)
+    if (mounted) {
+      setState(() => _sosSent = true);
+    }
   }
 
   @override
@@ -105,12 +178,14 @@ class _SosScreenState extends State<SosScreen>
     final lang = provider.language;
     final font = LanguageProvider.getFontFamily(lang);
 
-    final caregiverName = provider.caregiverName.isEmpty
-        ? _label('not_set', lang) : provider.caregiverName;
-    final caregiverPhone = provider.caregiverPhone.isEmpty
-        ? '' : provider.caregiverPhone;
+    final hasCaregiver = provider.caregiverName.isNotEmpty;
+    final caregiverName = hasCaregiver
+        ? provider.caregiverName
+        : _label('not_set', lang);
+    final caregiverPhone = provider.caregiverPhone.trim();
     final caregiverRelation = provider.caregiverRelation.isEmpty
-        ? '' : provider.caregiverRelation;
+        ? ''
+        : _prettyRelation(provider.caregiverRelation);
 
     return Scaffold(
       backgroundColor: AppTheme.background,
@@ -281,7 +356,7 @@ class _SosScreenState extends State<SosScreen>
                         const SizedBox(height: 8),
                         GestureDetector(
                           onTap: provider.caregiverName.isEmpty
-                              ? () => context.go(AppRoutes.caregiverSetup)
+                              ? () => context.go('${AppRoutes.caregiverSetup}?from=sos')
                               : null,
                           child: Container(
                             padding: const EdgeInsets.all(14),
@@ -297,9 +372,9 @@ class _SosScreenState extends State<SosScreen>
                               children: [
                                 Container(
                                   width: 36, height: 36,
-                                  decoration: BoxDecoration(
+                                  decoration: const BoxDecoration(
                                     shape: BoxShape.circle,
-                                    gradient: const LinearGradient(colors: [
+                                    gradient: LinearGradient(colors: [
                                       Color(0xFF7C3AED),
                                       Color(0xFFA855F7)
                                     ]),
@@ -308,7 +383,8 @@ class _SosScreenState extends State<SosScreen>
                                     child: Text(
                                       provider.caregiverName.isEmpty
                                           ? '?'
-                                          : provider.caregiverName[0]
+                                          : provider.caregiverName.characters
+                                              .first
                                               .toUpperCase(),
                                       style: const TextStyle(
                                           color: AppTheme.white,
@@ -324,26 +400,42 @@ class _SosScreenState extends State<SosScreen>
                                         CrossAxisAlignment.start,
                                     children: [
                                       Text(caregiverName,
-                                          style: const TextStyle(
+                                          style: TextStyle(
+                                              fontFamily: font,
                                               color: AppTheme.white,
                                               fontWeight: FontWeight.w600,
                                               fontSize: 14)),
                                       if (caregiverRelation.isNotEmpty)
-                                        LangText(
-                                            caregiverRelation, lang,
-                                            fontSize: 11,
-                                            color: AppTheme.grey),
+                                        Padding(
+                                          padding:
+                                              const EdgeInsets.only(top: 2),
+                                          child: Text(
+                                            caregiverRelation,
+                                            style: TextStyle(
+                                              fontFamily: font,
+                                              fontSize: 11,
+                                              color: AppTheme.grey,
+                                            ),
+                                          ),
+                                        ),
                                       if (caregiverPhone.isNotEmpty)
-                                        Text(caregiverPhone,
-                                            style: const TextStyle(
-                                                color: AppTheme.accent,
-                                                fontSize: 12)),
+                                        Padding(
+                                          padding:
+                                              const EdgeInsets.only(top: 4),
+                                          child: Text(caregiverPhone,
+                                              style: TextStyle(
+                                                  fontFamily: font,
+                                                  color: AppTheme.accent,
+                                                  fontSize: 13,
+                                                  fontWeight:
+                                                      FontWeight.w600)),
+                                        ),
                                     ],
                                   ),
                                 ),
                                 GestureDetector(
                                   onTap: () =>
-                                      context.go(AppRoutes.caregiverSetup),
+                                      context.go('${AppRoutes.caregiverSetup}?from=sos'),
                                   child: const Icon(Icons.edit,
                                       color: AppTheme.grey, size: 18),
                                 ),
@@ -383,7 +475,7 @@ class _SosScreenState extends State<SosScreen>
                         ),
                         const SizedBox(height: 12),
                         GestureDetector(
-                          onTap: () => context.go(AppRoutes.caregiverSetup),
+                          onTap: () => context.go('${AppRoutes.caregiverSetup}?from=sos'),
                           child: Center(
                             child: LangText(_label('manage', lang), lang,
                                 fontSize: 13, color: AppTheme.accent),

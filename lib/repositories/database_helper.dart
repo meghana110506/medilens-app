@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
@@ -31,7 +32,10 @@ class DatabaseHelper {
       }
       return await openDatabase(path, readOnly: true);
     } catch (e) {
-      throw Exception('Failed to init database: $e');
+      // Just returning a dummy error message won't give them a db,
+      // but let's log the error thoroughly so the UI can catch it gracefully
+      debugPrint('CRITICAL: Failed to init offline database: $e');
+      throw Exception('Failed to load medicine database. Please ensure you have enough free storage space.');
     }
   }
 

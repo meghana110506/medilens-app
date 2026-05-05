@@ -1,4 +1,5 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:medilens/core/theme.dart';
@@ -19,6 +20,74 @@ class _CaregiverSetupScreenState extends State<CaregiverSetupScreen> {
   String _selectedRelation = 'daughter';
   bool _nameError = false;
   bool _phoneError = false;
+
+  String? _entryFrom(BuildContext context) =>
+      GoRouterState.of(context).uri.queryParameters['from'];
+
+  void _navigateBack(BuildContext context) {
+    switch (_entryFrom(context)) {
+      case 'settings':
+        context.go(AppRoutes.settings);
+        break;
+      case 'sos':
+        context.go(AppRoutes.sos);
+        break;
+      case 'allset':
+        context.go(AppRoutes.allSet);
+        break;
+      case 'accessibility':
+        context.go(AppRoutes.accessibility);
+        break;
+      default:
+        context.go(AppRoutes.healthProfile);
+    }
+  }
+
+  void _navigateAfterSave(BuildContext context) {
+    switch (_entryFrom(context)) {
+      case 'settings':
+        context.go(AppRoutes.settings);
+        break;
+      case 'sos':
+        context.go(AppRoutes.sos);
+        break;
+      case 'allset':
+        context.go(AppRoutes.allSet);
+        break;
+      case 'accessibility':
+        context.go(AppRoutes.accessibility);
+        break;
+      default:
+        context.go(AppRoutes.accessibility);
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final p = context.read<LanguageProvider>();
+      final relationKeys =
+          _relations.map((r) => r['key'] as String).toSet();
+      if (p.caregiverName.isNotEmpty) {
+        _nameController.text = p.caregiverName;
+      }
+      if (p.caregiverPhone.isNotEmpty) {
+        _phoneController.text = p.caregiverPhone;
+      }
+      if (p.caregiverRelation.isNotEmpty &&
+          relationKeys.contains(p.caregiverRelation)) {
+        _selectedRelation = p.caregiverRelation;
+      }
+      if (p.caregiverName.isNotEmpty ||
+          p.caregiverPhone.isNotEmpty ||
+          (p.caregiverRelation.isNotEmpty &&
+              relationKeys.contains(p.caregiverRelation))) {
+        setState(() {});
+      }
+    });
+  }
 
   final List<Map<String, dynamic>> _relations = [
     {
@@ -178,11 +247,13 @@ class _CaregiverSetupScreenState extends State<CaregiverSetupScreen> {
     super.dispose();
   }
 
-  void _continue(String lang) {
+  bool _isValidName(String name) => name.trim().length >= 2;
+  bool _isValidPhone(String phone) => RegExp(r'^[6-9]\d{9}$').hasMatch(phone);
+
+  Future<void> _continue(String lang) async {
     setState(() {
-      _nameError = _nameController.text.trim().isEmpty;
-      _phoneError = _phoneController.text.trim().isEmpty ||
-          _phoneController.text.trim().length < 10;
+      _nameError = !_isValidName(_nameController.text);
+      _phoneError = !_isValidPhone(_phoneController.text);
     });
 
     if (_nameError) {
@@ -195,7 +266,15 @@ class _CaregiverSetupScreenState extends State<CaregiverSetupScreen> {
           : _label('phone_invalid', lang));
       return;
     }
-    context.go(AppRoutes.accessibility);
+
+    await context.read<LanguageProvider>().saveCaregiver(
+          name: _nameController.text.trim(),
+          phone: _phoneController.text.trim(),
+          relation: _selectedRelation,
+        );
+
+    if (!mounted) return;
+    _navigateAfterSave(context);
   }
 
   void _showError(String message) {
@@ -225,7 +304,7 @@ class _CaregiverSetupScreenState extends State<CaregiverSetupScreen> {
                     Row(
                       children: [
                         GestureDetector(
-                          onTap: () => context.go(AppRoutes.healthProfile),
+                          onTap: () => _navigateBack(context),
                           child: Container(
                             width: 30,
                             height: 30,
@@ -291,15 +370,17 @@ class _CaregiverSetupScreenState extends State<CaregiverSetupScreen> {
                             fontFamily: font,
                             color: AppTheme.white,
                             fontSize: fontSize - 2),
-                        onChanged: (_) => setState(() => _nameError = false),
+                        onChanged: (_) => setState(() {}),
                         decoration: InputDecoration(
                           prefixIcon: const Icon(Icons.person,
                               color: AppTheme.accent, size: 20),
-                          suffixIcon: _nameController.text.isNotEmpty
+                          suffixIcon: _isValidName(_nameController.text)
                               ? const Icon(Icons.check,
                                   color: AppTheme.teal, size: 16)
-                              : const Icon(Icons.error_outline,
-                                  color: AppTheme.error, size: 16),
+                              : _nameController.text.isNotEmpty
+                                  ? const Icon(Icons.error_outline,
+                                      color: AppTheme.error, size: 16)
+                                  : null,
                           border: InputBorder.none,
                           contentPadding: const EdgeInsets.symmetric(
                               vertical: 12, horizontal: 8),
@@ -382,11 +463,15 @@ class _CaregiverSetupScreenState extends State<CaregiverSetupScreen> {
                             fontFamily: font,
                             color: AppTheme.white,
                             fontSize: fontSize - 2),
-                        onChanged: (_) => setState(() => _phoneError = false),
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                          LengthLimitingTextInputFormatter(10),
+                        ],
+                        onChanged: (_) => setState(() {}),
                         decoration: InputDecoration(
                           prefixIcon: const Icon(Icons.phone,
                               color: AppTheme.accent, size: 20),
-                          suffixIcon: _phoneController.text.length >= 10
+                          suffixIcon: _isValidPhone(_phoneController.text)
                               ? const Icon(Icons.check,
                                   color: AppTheme.teal, size: 16)
                               : _phoneController.text.isNotEmpty

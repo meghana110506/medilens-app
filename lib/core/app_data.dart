@@ -52,12 +52,18 @@ class AppData extends ChangeNotifier {
     notifyListeners();
   }
 
+  void updateReminder(int index, Map<String, dynamic> reminder) {
+    _reminders[index] = reminder;
+    notifyListeners();
+  }
+
   void removeReminder(int index) {
     _reminders.removeAt(index);
     notifyListeners();
   }
 
-  static String getExpiryStatus(String expiryDate) {
+  /// Last calendar day of the expiry month, or null if the label cannot be parsed.
+  static DateTime? parseExpiryEndDate(String expiryDate) {
     try {
       DateTime? expiry;
       final monthYear = RegExp(r'(\d{2})[\/\-](\d{4})');
@@ -114,6 +120,15 @@ class AppData extends ChangeNotifier {
         expiry = DateTime(year, month + 1, 0);
       }
 
+      return expiry;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  static String getExpiryStatus(String expiryDate) {
+    try {
+      final expiry = parseExpiryEndDate(expiryDate);
       if (expiry == null) return 'valid';
       final now = DateTime.now();
       final diff = expiry.difference(now).inDays;
@@ -127,61 +142,7 @@ class AppData extends ChangeNotifier {
 
   static String getTimeLeft(String expiryDate) {
     try {
-      DateTime? expiry;
-      final monthYear = RegExp(r'(\d{2})[\/\-](\d{4})');
-      final monthNameYear = RegExp(
-          r'(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)\s+(\d{4})',
-          caseSensitive: false);
-      final monthNameYear2 = RegExp(
-          r'(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{4})',
-          caseSensitive: false);
-
-      final m1 = monthYear.firstMatch(expiryDate);
-      final m2 = monthNameYear.firstMatch(expiryDate);
-      final m3 = monthNameYear2.firstMatch(expiryDate);
-
-      if (m1 != null) {
-        final month = int.parse(m1.group(1)!);
-        final year = int.parse(m1.group(2)!);
-        expiry = DateTime(year, month + 1, 0);
-      } else if (m2 != null) {
-        const months = {
-          'jan': 1,
-          'feb': 2,
-          'mar': 3,
-          'apr': 4,
-          'may': 5,
-          'jun': 6,
-          'jul': 7,
-          'aug': 8,
-          'sep': 9,
-          'oct': 10,
-          'nov': 11,
-          'dec': 12,
-        };
-        final month = months[m2.group(1)!.toLowerCase()] ?? 1;
-        final year = int.parse(m2.group(2)!);
-        expiry = DateTime(year, month + 1, 0);
-      } else if (m3 != null) {
-        const months = {
-          'january': 1,
-          'february': 2,
-          'march': 3,
-          'april': 4,
-          'may': 5,
-          'june': 6,
-          'july': 7,
-          'august': 8,
-          'september': 9,
-          'october': 10,
-          'november': 11,
-          'december': 12,
-        };
-        final month = months[m3.group(1)!.toLowerCase()] ?? 1;
-        final year = int.parse(m3.group(2)!);
-        expiry = DateTime(year, month + 1, 0);
-      }
-
+      final expiry = parseExpiryEndDate(expiryDate);
       if (expiry == null) return 'Unknown';
       final now = DateTime.now();
       final diff = expiry.difference(now).inDays;

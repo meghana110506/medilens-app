@@ -244,7 +244,8 @@ class _AllSetScreenState extends State<AllSetScreen>
                             ),
                           ),
                           GestureDetector(
-                            onTap: () => context.go(AppRoutes.caregiverSetup),
+                            onTap: () =>
+                                context.go('${AppRoutes.caregiverSetup}?from=allset'),
                             child: const Icon(Icons.edit,
                                 color: AppTheme.grey, size: 16),
                           ),

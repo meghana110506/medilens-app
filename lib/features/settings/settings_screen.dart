@@ -1,4 +1,5 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -7,6 +8,7 @@ import 'package:medilens/core/routes.dart';
 import 'package:medilens/core/constants.dart';
 import 'package:medilens/core/lang_text.dart';
 import 'package:medilens/providers/language_provider.dart';
+import 'package:medilens/services/notification_service.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -16,11 +18,8 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  bool _remindersEnabled = true;
-  bool _expiryAlertsEnabled = true;
   bool _bilingualAudio = true;
   bool _voiceReminders = true;
-  final Set<String> _audioLangs = {'en'};
 
   final Map<String, Map<String, String>> _labels = {
     'title': {
@@ -195,6 +194,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
       'hi': 'समाप्ति अलर्ट',
       'ta': 'காலாவதி எச்சரிக்கைகள்'
     },
+    'digest_time': {
+      'en': 'Daily expiry summary time',
+      'te': 'రోజువారీ గడువు సారాంశ సమయం',
+      'hi': 'दैनिक एक्सपायरी सारांश समय',
+      'ta': 'தினசரி காலாவதி சுருக்க நேரம்'
+    },
+    'digest_time_sub': {
+      'en': 'Digest + per-medicine heads-up use this time',
+      'te': 'డైజెస్ట్ మరియు ప్రతి మందు హెచ్చరికలు ఈ సమయాన్ని ఉపయోగిస్తాయి',
+      'hi': 'सारांश और प्रति-दवा अलर्ट इस समय पर',
+      'ta': 'சுருக்கமும் மருந்து எச்சரிக்கைகளும் இந்த நேரத்தில்'
+    },
+    'notif_permission_cta': {
+      'en': 'Review notification permission…',
+      'te': 'నోటిఫికేషన్ అనుమతి చూడండి…',
+      'hi': 'सूचना अनुमति देखें…',
+      'ta': 'அறிவிப்பு அனுமதியைப் பார்க்கவும்…'
+    },
     'profile': {
       'en': 'Profile',
       'te': 'ప్రొఫైల్',
@@ -223,7 +240,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     super.initState();
     final provider = context.read<LanguageProvider>();
     _bilingualAudio = provider.bilingualEnabled;
-    _audioLangs.add(provider.language);
   }
 
   @override
@@ -392,36 +408,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             const SizedBox(height: 12),
 
-            // Audio Language
-            _sectionLabel('🔊 ${_label('audio_lang', lang)}', font),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: AppTheme.card,
-                borderRadius: BorderRadius.circular(12),
-                border:
-                    Border.all(color: AppTheme.grey.withValues(alpha: 0.15)),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  LangText(_label('audio_lang_desc', lang), lang,
-                      fontSize: fontSize - 2, color: AppTheme.grey),
-                  const SizedBox(height: 10),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      _audioChip('en', '🇬🇧 English', fontSize),
-                      _audioChip('te', '🇮🇳 తెలుగు', fontSize),
-                      _audioChip('hi', '🇮🇳 हिंदी', fontSize),
-                      _audioChip('ta', '🇮🇳 தமிழ்', fontSize),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
+
 
             // Text Size
             _sectionLabel('🔤 ${_label('font_size', lang)}', font),
@@ -524,7 +511,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   : 'MediLens is ready to help you';
                       await provider.speak(text);
                       if (_bilingualAudio && lang != 'en') {
-                        await Future.delayed(const Duration(seconds: 2));
                         await provider.speakInLanguage(
                             'MediLens is ready to help you', 'en');
                       }
@@ -621,25 +607,108 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     Border.all(color: AppTheme.grey.withValues(alpha: 0.15)),
               ),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _toggleRow(
                       '💊',
                       _label('reminders_notif', lang),
                       '',
-                      _remindersEnabled,
+                      provider.remindersNotifEnabled,
                       lang,
                       fontSize,
-                      (val) => setState(() => _remindersEnabled = val)),
+                      (val) => provider.setRemindersNotifEnabled(val)),
                   Divider(
                       color: AppTheme.grey.withValues(alpha: 0.2), height: 20),
                   _toggleRow(
                       '📅',
                       _label('expiry', lang),
                       '',
-                      _expiryAlertsEnabled,
+                      provider.expiryAlertsEnabled,
                       lang,
                       fontSize,
-                      (val) => setState(() => _expiryAlertsEnabled = val)),
+                      (val) => provider.setExpiryAlertsEnabled(val)),
+                  if (provider.expiryAlertsEnabled) ...[
+                    Divider(
+                        color: AppTheme.grey.withValues(alpha: 0.2), height: 20),
+                    GestureDetector(
+                      onTap: () async {
+                        final initial = TimeOfDay(
+                            hour: provider.expiryDigestHour,
+                            minute: provider.expiryDigestMinute);
+                        final picked = await showTimePicker(
+                          context: context,
+                          initialTime: initial,
+                          builder: (ctx, child) => Theme(
+                            data: ThemeData.dark().copyWith(
+                              colorScheme: const ColorScheme.dark(
+                                primary: AppTheme.accent,
+                                surface: AppTheme.card,
+                              ),
+                            ),
+                            child: child!,
+                          ),
+                        );
+                        if (picked != null && context.mounted) {
+                          await provider.setExpiryDigestTime(
+                              picked.hour, picked.minute);
+                        }
+                      },
+                      child: Row(
+                        children: [
+                          const Text('⏰',
+                              style: TextStyle(fontSize: 20)),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                LangText(_label('digest_time', lang), lang,
+                                    fontSize: fontSize,
+                                    fontWeight: FontWeight.w600),
+                                LangText(_label('digest_time_sub', lang), lang,
+                                    fontSize: fontSize - 3,
+                                    color: AppTheme.grey),
+                              ],
+                            ),
+                          ),
+                          Text(
+                            TimeOfDay(
+                                    hour: provider.expiryDigestHour,
+                                    minute: provider.expiryDigestMinute)
+                                .format(context),
+                            style: TextStyle(
+                              color: AppTheme.accent,
+                              fontWeight: FontWeight.bold,
+                              fontSize: fontSize,
+                              fontFamily: font,
+                            ),
+                          ),
+                          const Icon(Icons.chevron_right,
+                              color: AppTheme.grey, size: 20),
+                        ],
+                      ),
+                    ),
+                  ],
+                  if (!kIsWeb &&
+                      defaultTargetPlatform == TargetPlatform.android &&
+                      !provider.notificationPermissionRequested) ...[
+                    Divider(
+                        color: AppTheme.grey.withValues(alpha: 0.2), height: 16),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton(
+                        onPressed: () {
+                          NotificationService
+                              .showAndroidPermissionPrecheckIfNeeded(context);
+                        },
+                        child: LangText(
+                            _label('notif_permission_cta', lang), lang,
+                            fontSize: fontSize - 1,
+                            fontWeight: FontWeight.w600,
+                            color: AppTheme.accent),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -661,7 +730,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   Divider(
                       color: AppTheme.grey.withValues(alpha: 0.1), height: 1),
                   GestureDetector(
-                    onTap: () => context.go(AppRoutes.caregiverSetup),
+                    onTap: () =>
+                        context.go('${AppRoutes.caregiverSetup}?from=settings'),
                     child: _dataRow('👤', _label('caregivers', lang), '1 added',
                         Icons.chevron_right, lang, fontSize),
                   ),
@@ -781,41 +851,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _audioChip(String code, String label, double fontSize) {
-    final isOn = _audioLangs.contains(code);
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          if (isOn && _audioLangs.length > 1) {
-            _audioLangs.remove(code);
-          } else {
-            _audioLangs.add(code);
-          }
-        });
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: isOn
-              ? AppTheme.accent.withValues(alpha: 0.15)
-              : AppTheme.background,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color:
-                isOn ? AppTheme.accent : AppTheme.grey.withValues(alpha: 0.3),
-            width: 1.5,
-          ),
-        ),
-        child: Text(label,
-            style: TextStyle(
-              fontFamily: LanguageProvider.getFontFamily(code),
-              color: isOn ? AppTheme.accent : AppTheme.grey,
-              fontWeight: FontWeight.w600,
-              fontSize: fontSize - 2,
-            )),
-      ),
-    );
-  }
+
 
   Widget _fontBtn(double size, String label, String lang, double currentSize,
       LanguageProvider provider) {
@@ -906,7 +942,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         Switch(
           value: value,
           onChanged: onChanged,
-          activeColor: AppTheme.accent,
+          activeThumbColor: AppTheme.accent,
         ),
       ],
     );

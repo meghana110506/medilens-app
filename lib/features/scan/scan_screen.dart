@@ -20,14 +20,17 @@ class _ScanScreenState extends State<ScanScreen> {
   bool _isInitialized = false;
   bool _isScanning = false;
   bool _flashOn = false;
+  bool _autoCapture = false;
   String _hint = '';
+  String _detectedText = '';
+  int _autoCountdown = 3;
   final TextRecognizer _textRecognizer = TextRecognizer();
 
   final Map<String, String> _hints = {
-    'en': 'Align medicine label here',
-    'te': 'మందు లేబుల్ ఇక్కడ అమర్చండి',
-    'hi': 'दवा लेबल यहाँ रखें',
-    'ta': 'மருந்து லேபலை இங்கே வையுங்கள்',
+    'en': 'Align medicine label inside the frame',
+    'te': 'మందు లేబుల్ ఫ్రేమ్ లోపల అమర్చండి',
+    'hi': 'दवा लेबल को फ्रेम के अंदर रखें',
+    'ta': 'மருந்து லேபலை சட்டத்திற்குள் வையுங்கள்',
   };
 
   final Map<String, String> _scanningText = {
@@ -37,11 +40,32 @@ class _ScanScreenState extends State<ScanScreen> {
     'ta': 'ஸ்கேன் செய்கிறோம்...',
   };
 
-  final Map<String, String> _scanTitle = {
-    'en': 'Scan Medicine',
-    'te': 'మందు స్కాన్ చేయండి',
-    'hi': 'दवा स्कैन करें',
-    'ta': 'மருந்தை ஸ்கேன் செய்யுங்கள்',
+  final Map<String, String> _detectedText2 = {
+    'en': 'Text detected! Auto-capturing in',
+    'te': 'టెక్స్ట్ గుర్తించబడింది! స్వయంచాలకంగా',
+    'hi': 'टेक्स्ट मिला! ऑटो-कैप्चर',
+    'ta': 'உரை கண்டறியப்பட்டது! தானாக',
+  };
+
+  final Map<String, String> _noText = {
+    'en': 'No medicine label detected. Try again.',
+    'te': 'మందు లేబుల్ కనుగొనబడలేదు. మళ్ళీ ప్రయత్నించండి.',
+    'hi': 'कोई दवा लेबल नहीं मिला। पुनः प्रयास करें।',
+    'ta': 'மருந்து லேபல் கண்டறியப்படவில்லை. மீண்டும் முயற்சிக்கவும்.',
+  };
+
+  final Map<String, String> _autoText = {
+    'en': 'Auto',
+    'te': 'ఆటో',
+    'hi': 'ऑटो',
+    'ta': 'தானியங்கி',
+  };
+
+  final Map<String, String> _manualText = {
+    'en': 'Manual',
+    'te': 'మాన్యువల్',
+    'hi': 'मैन्युअल',
+    'ta': 'கையேடு',
   };
 
   @override
@@ -60,12 +84,60 @@ class _ScanScreenState extends State<ScanScreen> {
         enableAudio: false,
       );
       await _cameraController!.initialize();
-      if (mounted) {
-        setState(() => _isInitialized = true);
-      }
+      if (mounted) setState(() => _isInitialized = true);
+      if (_autoCapture) _startAutoDetect();
     } catch (e) {
       debugPrint('Camera error: $e');
     }
+  }
+
+  void _startAutoDetect() {
+    Future.delayed(const Duration(seconds: 2), () async {
+      if (!mounted || !_autoCapture || _isScanning) return;
+      await _quickScan();
+      if (mounted && _autoCapture) _startAutoDetect();
+    });
+  }
+
+  Future<void> _quickScan() async {
+    if (!_isInitialized || _cameraController == null) return;
+    try {
+      final image = await _cameraController!.takePicture();
+      final inputImage = InputImage.fromFilePath(image.path);
+      final recognizedText = await _textRecognizer.processImage(inputImage);
+      final text = recognizedText.text.trim();
+
+      if (text.length > 10) {
+        // Good text detected
+        setState(() {
+          _detectedText = text;
+          _autoCountdown = 3;
+        });
+        _startCountdown();
+      } else {
+        if (mounted) {
+          setState(() => _detectedText = '');
+        }
+      }
+    } catch (e) {
+      debugPrint('Quick scan error: $e');
+    }
+  }
+
+  void _startCountdown() {
+    setState(() => _autoCountdown = 3);
+    Future.delayed(const Duration(seconds: 1), () {
+      if (!mounted || _detectedText.isEmpty) return;
+      setState(() => _autoCountdown = 2);
+      Future.delayed(const Duration(seconds: 1), () {
+        if (!mounted || _detectedText.isEmpty) return;
+        setState(() => _autoCountdown = 1);
+        Future.delayed(const Duration(seconds: 1), () {
+          if (!mounted || _detectedText.isEmpty) return;
+          _proceedToProcessing(_detectedText);
+        });
+      });
+    });
   }
 
   Future<void> _scan(String lang) async {
@@ -79,22 +151,39 @@ class _ScanScreenState extends State<ScanScreen> {
       final image = await _cameraController!.takePicture();
       final inputImage = InputImage.fromFilePath(image.path);
       final recognizedText = await _textRecognizer.processImage(inputImage);
-
-      String scannedText = recognizedText.text.trim();
-      debugPrint('OCR Result: $scannedText');
+      final scannedText = recognizedText.text.trim();
 
       if (mounted) {
-        // Navigate to processing screen with scanned text
-        context.go(AppRoutes.processing, extra: scannedText);
+        if (scannedText.length > 5) {
+          _proceedToProcessing(scannedText);
+        } else {
+          // Nothing detected — show error, stay on scan screen
+          setState(() {
+            _isScanning = false;
+            _hint = _noText[lang] ?? 'No medicine label detected. Try again.';
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(_noText[lang] ?? 'No medicine label detected.'),
+              backgroundColor: Colors.orange,
+              duration: const Duration(seconds: 2),
+            ),
+          );
+          // Reset hint after 3 seconds
+          Future.delayed(const Duration(seconds: 3), () {
+            if (mounted) setState(() => _hint = '');
+          });
+        }
       }
     } catch (e) {
       debugPrint('Scan error: $e');
-      if (mounted) {
-        setState(() {
-          _isScanning = false;
-          _hint = _hints[lang] ?? 'Align medicine label here';
-        });
-      }
+      if (mounted) setState(() => _isScanning = false);
+    }
+  }
+
+  void _proceedToProcessing(String text) {
+    if (mounted) {
+      context.go(AppRoutes.processing, extra: text);
     }
   }
 
@@ -104,6 +193,14 @@ class _ScanScreenState extends State<ScanScreen> {
     await _cameraController!.setFlashMode(
       _flashOn ? FlashMode.torch : FlashMode.off,
     );
+  }
+
+  void _toggleAutoCapture() {
+    setState(() {
+      _autoCapture = !_autoCapture;
+      _detectedText = '';
+    });
+    if (_autoCapture) _startAutoDetect();
   }
 
   @override
@@ -133,11 +230,9 @@ class _ScanScreenState extends State<ScanScreen> {
               ),
             ),
 
-          // Dark overlay with viewfinder cutout
+          // Dark overlay with viewfinder
           Positioned.fill(
-            child: CustomPaint(
-              painter: _ViewfinderPainter(),
-            ),
+            child: CustomPaint(painter: _ViewfinderPainter()),
           ),
 
           // Top bar
@@ -160,8 +255,38 @@ class _ScanScreenState extends State<ScanScreen> {
                           color: AppTheme.white, size: 20),
                     ),
                   ),
-                  LangText(_scanTitle[lang] ?? 'Scan Medicine', lang,
-                      fontSize: 16, fontWeight: FontWeight.bold),
+                  // Auto/Manual toggle
+                  GestureDetector(
+                    onTap: _toggleAutoCapture,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: _autoCapture
+                            ? AppTheme.teal.withValues(alpha: 0.8)
+                            : Colors.black54,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                            color:
+                                _autoCapture ? AppTheme.teal : Colors.white30),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(_autoCapture ? Icons.auto_mode : Icons.touch_app,
+                              color: AppTheme.white, size: 14),
+                          const SizedBox(width: 4),
+                          Text(
+                              _autoCapture
+                                  ? (_autoText[lang] ?? 'Auto')
+                                  : (_manualText[lang] ?? 'Manual'),
+                              style: const TextStyle(
+                                  color: AppTheme.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600)),
+                        ],
+                      ),
+                    ),
+                  ),
                   GestureDetector(
                     onTap: _toggleFlash,
                     child: Container(
@@ -183,20 +308,19 @@ class _ScanScreenState extends State<ScanScreen> {
             ),
           ),
 
-          // Viewfinder hint
+          // Viewfinder center area
           Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 const SizedBox(height: 20),
-                // Corner markers
                 SizedBox(
                   width: 260,
                   height: 160,
                   child: Stack(
                     children: [
-                      // Scanning animation
-                      if (_isScanning)
+                      if (_isScanning ||
+                          (_autoCapture && _detectedText.isEmpty))
                         Positioned.fill(
                           child: LinearProgressIndicator(
                             backgroundColor: Colors.transparent,
@@ -207,72 +331,146 @@ class _ScanScreenState extends State<ScanScreen> {
                     ],
                   ),
                 ),
-                const SizedBox(height: 16),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.black54,
-                    borderRadius: BorderRadius.circular(20),
+                const SizedBox(height: 12),
+                // Status hint
+                if (_autoCapture && _detectedText.isNotEmpty)
+                  Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 24),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: AppTheme.success.withValues(alpha: 0.85),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.check_circle,
+                            color: AppTheme.white, size: 16),
+                        const SizedBox(width: 6),
+                        Text(
+                            '${_detectedText2[lang] ?? 'Text detected! Auto-capturing in'} $_autoCountdown...',
+                            style: const TextStyle(
+                                color: AppTheme.white,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600)),
+                      ],
+                    ),
+                  )
+                else
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.black54,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: LangText(
+                      _hint.isEmpty
+                          ? (_hints[lang] ??
+                              'Align medicine label inside the frame')
+                          : _hint,
+                      lang,
+                      fontSize: 13,
+                      color: _hint.contains('No medicine') ||
+                              _hint.contains('కనుగొనబడలేదు') ||
+                              _hint.contains('नहीं मिला') ||
+                              _hint.contains('கண்டறியப்படவில்லை')
+                          ? Colors.orange
+                          : AppTheme.teal,
+                    ),
                   ),
-                  child: LangText(
-                    _hint.isEmpty
-                        ? (_hints[lang] ?? 'Align medicine label here')
-                        : _hint,
-                    lang,
-                    fontSize: 13,
-                    color: AppTheme.teal,
-                  ),
-                ),
               ],
             ),
           ),
 
-          // Bottom controls
-          Positioned(
-            bottom: 40,
-            left: 0,
-            right: 0,
-            child: Column(
-              children: [
-                // Shutter button
-                GestureDetector(
-                  onTap: () => _scan(lang),
-                  child: Container(
+          // Bottom controls — only show shutter in manual mode
+          if (!_autoCapture)
+            Positioned(
+              bottom: 40,
+              left: 0,
+              right: 0,
+              child: Column(
+                children: [
+                  GestureDetector(
+                    onTap: () => _scan(lang),
+                    child: Container(
+                      width: 80,
+                      height: 80,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white70, width: 3),
+                      ),
+                      child: Center(
+                        child: Container(
+                          width: 64,
+                          height: 64,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: _isScanning ? AppTheme.grey : AppTheme.white,
+                          ),
+                          child: _isScanning
+                              ? const CircularProgressIndicator(
+                                  color: AppTheme.accent, strokeWidth: 2)
+                              : null,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                      _isScanning
+                          ? (_scanningText[lang] ?? 'Scanning...')
+                          : 'Tap to scan',
+                      style:
+                          const TextStyle(color: Colors.white70, fontSize: 13)),
+                ],
+              ),
+            ),
+
+          // Auto mode indicator at bottom
+          if (_autoCapture)
+            Positioned(
+              bottom: 40,
+              left: 0,
+              right: 0,
+              child: Column(
+                children: [
+                  Container(
                     width: 80,
                     height: 80,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white70, width: 3),
+                      border: Border.all(color: AppTheme.teal, width: 3),
+                      color: AppTheme.teal.withValues(alpha: 0.15),
                     ),
-                    child: Center(
-                      child: Container(
-                        width: 64,
-                        height: 64,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: _isScanning ? AppTheme.grey : AppTheme.white,
-                        ),
-                        child: _isScanning
-                            ? const CircularProgressIndicator(
-                                color: AppTheme.accent, strokeWidth: 2)
-                            : null,
-                      ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.auto_mode,
+                            color: AppTheme.teal, size: 28),
+                        Text(_autoText[lang] ?? 'Auto',
+                            style: const TextStyle(
+                                color: AppTheme.teal,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold)),
+                      ],
                     ),
                   ),
-                ),
-                const SizedBox(height: 16),
-                LangText(
-                  _isScanning
-                      ? (_scanningText[lang] ?? 'Scanning...')
-                      : 'Tap to scan',
-                  lang,
-                  fontSize: 13,
-                  color: Colors.white70,
-                ),
-              ],
+                  const SizedBox(height: 12),
+                  Text(
+                      lang == 'te'
+                          ? 'స్వయంచాలకంగా గుర్తిస్తోంది...'
+                          : lang == 'hi'
+                              ? 'स्वचालित रूप से पहचान रहा है...'
+                              : lang == 'ta'
+                                  ? 'தானாக கண்டறிகிறது...'
+                                  : 'Auto detecting medicine label...',
+                      style:
+                          const TextStyle(color: Colors.white70, fontSize: 13)),
+                ],
+              ),
             ),
-          ),
         ],
       ),
     );
@@ -289,14 +487,12 @@ class _ViewfinderPainter extends CustomPainter {
     final top = (size.height - rectHeight) / 2 - 20;
     final rect = Rect.fromLTWH(left, top, rectWidth, rectHeight);
 
-    // Draw dark overlay with hole
     final path = Path()
       ..addRect(Rect.fromLTWH(0, 0, size.width, size.height))
       ..addRRect(RRect.fromRectAndRadius(rect, const Radius.circular(12)))
       ..fillType = PathFillType.evenOdd;
     canvas.drawPath(path, paint);
 
-    // Draw corner markers
     final cornerPaint = Paint()
       ..color = AppTheme.teal
       ..strokeWidth = 3
@@ -305,22 +501,18 @@ class _ViewfinderPainter extends CustomPainter {
     const cornerLen = 20.0;
     const r = 12.0;
 
-    // Top left
     canvas.drawLine(
         Offset(left + r, top), Offset(left + r + cornerLen, top), cornerPaint);
     canvas.drawLine(
         Offset(left, top + r), Offset(left, top + r + cornerLen), cornerPaint);
-    // Top right
     canvas.drawLine(Offset(left + rectWidth - r, top),
         Offset(left + rectWidth - r - cornerLen, top), cornerPaint);
     canvas.drawLine(Offset(left + rectWidth, top + r),
         Offset(left + rectWidth, top + r + cornerLen), cornerPaint);
-    // Bottom left
     canvas.drawLine(Offset(left + r, top + rectHeight),
         Offset(left + r + cornerLen, top + rectHeight), cornerPaint);
     canvas.drawLine(Offset(left, top + rectHeight - r),
         Offset(left, top + rectHeight - r - cornerLen), cornerPaint);
-    // Bottom right
     canvas.drawLine(
         Offset(left + rectWidth - r, top + rectHeight),
         Offset(left + rectWidth - r - cornerLen, top + rectHeight),

@@ -18,86 +18,24 @@ class ExpiryTrackerScreen extends StatelessWidget {
     final medicines = appData.cabinet;
 
     final Map<String, Map<String, String>> labels = {
-      'title': {
-        'en': '📅 Expiry Tracker',
-        'te': '📅 గడువు ట్రాకర్',
-        'hi': '📅 समाप्ति ट्रैकर',
-        'ta': '📅 காலாவதி கண்காணிப்பு'
-      },
-      'sub': {
-        'en': 'Monitor all medicine expiry dates',
-        'te': 'అన్ని మందుల గడువు తేదీలు పర్యవేక్షించండి',
-        'hi': 'सभी दवाओं की समाप्ति तिथि देखें',
-        'ta': 'அனைத்து மருந்துகளின் காலாவதி தேதிகளை கண்காணிக்கவும்'
-      },
-      'overview': {
-        'en': 'OVERVIEW',
-        'te': 'అవలోకనం',
-        'hi': 'अवलोकन',
-        'ta': 'கண்ணோட்டம்'
-      },
-      'valid': {
-        'en': 'Valid',
-        'te': 'చెల్లుబాటు',
-        'hi': 'वैध',
-        'ta': 'செல்லுபடியாகும்'
-      },
-      'expiring': {
-        'en': 'Expiring Soon',
-        'te': 'త్వరలో గడువు',
-        'hi': 'जल्द समाप्त',
-        'ta': 'விரைவில் காலாவதி'
-      },
-      'expired': {
-        'en': 'Expired',
-        'te': 'గడువు తీరింది',
-        'hi': 'समाप्त',
-        'ta': 'காலாவதியானது'
-      },
-      'all': {
-        'en': 'All Medicines',
-        'te': 'అన్ని మందులు',
-        'hi': 'सभी दवाएं',
-        'ta': 'அனைத்து மருந்துகள்'
-      },
-      'empty': {
-        'en': 'No medicines to track.\nScan a medicine to track its expiry.',
-        'te':
-            'ట్రాక్ చేయడానికి మందులు లేవు.\nమందు స్కాన్ చేసి గడువు ట్రాక్ చేయండి.',
-        'hi':
-            'ट्रैक करने के लिए कोई दवा नहीं।\nदवा स्कैन करके एक्सपायरी ट्रैक करें।',
-        'ta':
-            'கண்காணிக்க மருந்துகள் இல்லை.\nமருந்தை ஸ்கேன் செய்து காலாவதியை கண்காணிக்கவும்.'
-      },
-      'scan_add': {
-        'en': 'Scan to Add Medicine',
-        'te': 'మందు జోడించడానికి స్కాన్ చేయండి',
-        'hi': 'दवा जोड़ने के लिए स्कैन करें',
-        'ta': 'மருந்து சேர்க்க ஸ்கேன் செய்யுங்கள்'
-      },
+      'title': {'en': '📅 Expiry Tracker', 'te': '📅 గడువు ట్రాకర్', 'hi': '📅 समाप्ति ट्रैकर', 'ta': '📅 காலாவதி கண்காணிப்பு'},
+      'sub': {'en': 'Monitor all medicine expiry dates', 'te': 'అన్ని మందుల గడువు తేదీలు పర్యవేక్షించండి', 'hi': 'सभी दवाओं की समाप्ति तिथि देखें', 'ta': 'அனைத்து மருந்துகளின் காலாவதி தேதிகளை கண்காணிக்கவும்'},
+      'overview': {'en': 'OVERVIEW', 'te': 'అవలోకనం', 'hi': 'अवलोकन', 'ta': 'கண்ணோட்டம்'},
+      'valid': {'en': 'Valid', 'te': 'చెల్లుబాటు', 'hi': 'वैध', 'ta': 'செல்லுபடியாகும்'},
+      'expiring': {'en': 'Expiring Soon', 'te': 'త్వరలో గడువు', 'hi': 'जल्द समाप्त', 'ta': 'விரைவில் காலாவதி'},
+      'expired': {'en': 'Expired', 'te': 'గడువు తీరింది', 'hi': 'समाप्त', 'ta': 'காலாவதியானது'},
+      'all': {'en': 'All Medicines', 'te': 'అన్ని మందులు', 'hi': 'सभी दवाएं', 'ta': 'அனைத்து மருந்துகள்'},
+      'empty': {'en': 'No medicines to track.\nScan a medicine to track its expiry.', 'te': 'ట్రాక్ చేయడానికి మందులు లేవు.\nమందు స్కాన్ చేసి గడువు ట్రాక్ చేయండి.', 'hi': 'ट्रैक करने के लिए कोई दवा नहीं।\nदवा स्कैन करके एक्सपायरी ट्रैक करें।', 'ta': 'கண்காணிக்க மருந்துகள் இல்லை.\nமருந்தை ஸ்கேன் செய்து காலாவதியை கண்காணிக்கவும்.'},
+      'scan_add': {'en': 'Scan to Add Medicine', 'te': 'మందు జోడించడానికి స్కాన్ చేయండి', 'hi': 'दवा जोड़ने के लिए स्कैन करें', 'ta': 'மருந்து சேர்க்க ஸ்கேன் செய்யுங்கள்'},
       'nav_home': {'en': 'Home', 'te': 'హోమ్', 'hi': 'होम', 'ta': 'முகப்பு'},
       'nav_scan': {'en': 'Scan', 'te': 'స్కాన్', 'hi': 'स्कैन', 'ta': 'ஸ்கேன்'},
-      'nav_cabinet': {
-        'en': 'Cabinet',
-        'te': 'పెట్టె',
-        'hi': 'कैबिनेट',
-        'ta': 'பெட்டி'
-      },
-      'nav_reminders': {
-        'en': 'Reminders',
-        'te': 'రిమైండర్లు',
-        'hi': 'रिमाइंडर',
-        'ta': 'நினைவூட்டல்'
-      },
-      'nav_settings': {
-        'en': 'Settings',
-        'te': 'సెట్టింగులు',
-        'hi': 'सेटिंग्s',
-        'ta': 'அமைப்புகள்'
-      },
+      'nav_cabinet': {'en': 'Cabinet', 'te': 'పెట్టె', 'hi': 'कैबिनेट', 'ta': 'பெட்டி'},
+      'nav_reminders': {'en': 'Reminders', 'te': 'రిమైండర్లు', 'hi': 'रिमाइंडर', 'ta': 'நினைவூட்டல்'},
+      'nav_settings': {'en': 'Settings', 'te': 'సెట్టింగులు', 'hi': 'सेटिंग्स', 'ta': 'அமைப்புகள்'},
     };
 
-    String label(String key) => labels[key]?[lang] ?? labels[key]?['en'] ?? key;
+    String label(String key) =>
+        labels[key]?[lang] ?? labels[key]?['en'] ?? key;
 
     return Scaffold(
       backgroundColor: AppTheme.background,
@@ -107,15 +45,14 @@ class ExpiryTrackerScreen extends StatelessWidget {
             child: Column(
               children: [
                 Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 14, vertical: 10),
                   child: Row(
                     children: [
                       GestureDetector(
                         onTap: () => context.go(AppRoutes.home),
                         child: Container(
-                          width: 30,
-                          height: 30,
+                          width: 30, height: 30,
                           decoration: BoxDecoration(
                             color: AppTheme.card,
                             borderRadius: BorderRadius.circular(8),
@@ -130,7 +67,8 @@ class ExpiryTrackerScreen extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             LangText(label('title'), lang,
-                                fontSize: 16, fontWeight: FontWeight.bold),
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold),
                             LangText(label('sub'), lang,
                                 fontSize: 11, color: AppTheme.grey),
                           ],
@@ -150,7 +88,10 @@ class ExpiryTrackerScreen extends StatelessWidget {
                           padding: const EdgeInsets.all(14),
                           decoration: BoxDecoration(
                             gradient: const LinearGradient(
-                              colors: [Color(0xFF1A2235), Color(0xFF1F2A40)],
+                              colors: [
+                                Color(0xFF1A2235),
+                                Color(0xFF1F2A40)
+                              ],
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                             ),
@@ -171,8 +112,11 @@ class ExpiryTrackerScreen extends StatelessWidget {
                               const SizedBox(height: 12),
                               Row(
                                 children: [
-                                  _overviewCard(appData.validCount.toString(),
-                                      label('valid'), AppTheme.success, lang),
+                                  _overviewCard(
+                                      appData.validCount.toString(),
+                                      label('valid'),
+                                      AppTheme.success,
+                                      lang),
                                   const SizedBox(width: 8),
                                   _overviewCard(
                                       appData.expiringCount.toString(),
@@ -180,8 +124,11 @@ class ExpiryTrackerScreen extends StatelessWidget {
                                       AppTheme.warning,
                                       lang),
                                   const SizedBox(width: 8),
-                                  _overviewCard(appData.expiredCount.toString(),
-                                      label('expired'), AppTheme.error, lang),
+                                  _overviewCard(
+                                      appData.expiredCount.toString(),
+                                      label('expired'),
+                                      AppTheme.error,
+                                      lang),
                                 ],
                               ),
                             ],
@@ -211,24 +158,29 @@ class ExpiryTrackerScreen extends StatelessWidget {
                                       textAlign: TextAlign.center),
                                   const SizedBox(height: 24),
                                   GestureDetector(
-                                    onTap: () => context.go(AppRoutes.scan),
+                                    onTap: () =>
+                                        context.go(AppRoutes.scan),
                                     child: Container(
                                       padding: const EdgeInsets.symmetric(
                                           horizontal: 24, vertical: 12),
                                       decoration: BoxDecoration(
-                                        gradient: const LinearGradient(colors: [
-                                          AppTheme.accent,
-                                          AppTheme.teal
-                                        ]),
-                                        borderRadius: BorderRadius.circular(12),
+                                        gradient: const LinearGradient(
+                                            colors: [
+                                              AppTheme.accent,
+                                              AppTheme.teal
+                                            ]),
+                                        borderRadius:
+                                            BorderRadius.circular(12),
                                       ),
                                       child: Row(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
                                           const Icon(Icons.camera_alt,
-                                              color: AppTheme.white, size: 20),
+                                              color: AppTheme.white,
+                                              size: 20),
                                           const SizedBox(width: 8),
-                                          LangText(label('scan_add'), lang,
+                                          LangText(label('scan_add'),
+                                              lang,
                                               fontSize: 14,
                                               fontWeight: FontWeight.bold),
                                         ],
@@ -249,9 +201,7 @@ class ExpiryTrackerScreen extends StatelessWidget {
             ),
           ),
           Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
+            bottom: 0, left: 0, right: 0,
             child: Container(
               height: 70,
               decoration: BoxDecoration(
@@ -265,10 +215,10 @@ class ExpiryTrackerScreen extends StatelessWidget {
                 children: [
                   _navItem(Icons.home, label('nav_home'), false,
                       () => context.go(AppRoutes.home), font),
-                  _navItem(Icons.qr_code_scanner, label('nav_scan'), false,
-                      () => context.go(AppRoutes.scan), font),
-                  _navItem(Icons.medical_services, label('nav_cabinet'), false,
-                      () => context.go(AppRoutes.cabinet), font),
+                  _navItem(Icons.qr_code_scanner, label('nav_scan'),
+                      false, () => context.go(AppRoutes.scan), font),
+                  _navItem(Icons.medical_services, label('nav_cabinet'),
+                      false, () => context.go(AppRoutes.cabinet), font),
                   _navItem(Icons.alarm, label('nav_reminders'), false,
                       () => context.go(AppRoutes.reminders), font),
                   _navItem(Icons.settings, label('nav_settings'), false,
@@ -282,7 +232,8 @@ class ExpiryTrackerScreen extends StatelessWidget {
     );
   }
 
-  Widget _overviewCard(String count, String label, Color color, String lang) {
+  Widget _overviewCard(
+      String count, String label, Color color, String lang) {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12),
@@ -295,7 +246,9 @@ class ExpiryTrackerScreen extends StatelessWidget {
           children: [
             Text(count,
                 style: TextStyle(
-                    color: color, fontSize: 24, fontWeight: FontWeight.bold)),
+                    color: color,
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold)),
             const SizedBox(height: 4),
             LangText(label, lang,
                 fontSize: 11,
@@ -334,14 +287,13 @@ class ExpiryTrackerScreen extends StatelessWidget {
       child: Row(
         children: [
           Container(
-            width: 34,
-            height: 34,
+            width: 34, height: 34,
             decoration: BoxDecoration(
               color: color.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(9),
             ),
-            child:
-                const Center(child: Text('💊', style: TextStyle(fontSize: 16))),
+            child: const Center(
+                child: Text('💊', style: TextStyle(fontSize: 16))),
           ),
           const SizedBox(width: 10),
           Expanded(
@@ -362,7 +314,8 @@ class ExpiryTrackerScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
                   color: color.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(20),
@@ -380,7 +333,8 @@ class ExpiryTrackerScreen extends StatelessWidget {
                   borderRadius: BorderRadius.circular(2),
                   child: LinearProgressIndicator(
                     value: progress,
-                    backgroundColor: AppTheme.grey.withValues(alpha: 0.2),
+                    backgroundColor:
+                        AppTheme.grey.withValues(alpha: 0.2),
                     valueColor: AlwaysStoppedAnimation(color),
                     minHeight: 3,
                   ),
@@ -403,14 +357,16 @@ class ExpiryTrackerScreen extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(icon,
-                color: isActive ? AppTheme.accent : AppTheme.grey, size: 26),
+                color: isActive ? AppTheme.accent : AppTheme.grey,
+                size: 26),
             const SizedBox(height: 4),
             Text(label,
                 style: TextStyle(
                   fontFamily: font,
                   color: isActive ? AppTheme.accent : AppTheme.grey,
                   fontSize: 11,
-                  fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+                  fontWeight:
+                      isActive ? FontWeight.w600 : FontWeight.normal,
                 )),
           ],
         ),

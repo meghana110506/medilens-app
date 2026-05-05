@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:medilens/core/theme.dart';
 import 'package:medilens/core/routes.dart';
 import 'package:medilens/core/lang_text.dart';
+import 'package:medilens/core/app_data.dart';
 import 'package:medilens/providers/language_provider.dart';
 
 class RemindersScreen extends StatefulWidget {
@@ -14,271 +15,108 @@ class RemindersScreen extends StatefulWidget {
 }
 
 class _RemindersScreenState extends State<RemindersScreen> {
-  final List<Map<String, dynamic>> _reminders = [];
-
-  int _selectedTab = 0;
-
   final Map<String, Map<String, String>> _labels = {
     'title': {
-      'en': 'Reminders',
-      'te': 'రిమైండర్లు',
-      'hi': 'रिमाइंडर',
-      'ta': 'நினைவூட்டல்கள்'
+      'en': '🔔 My Reminders',
+      'te': '🔔 నా రిమైండర్లు',
+      'hi': '🔔 मेरे रिमाइंडर',
+      'ta': '🔔 என் நினைவூட்டல்கள்'
     },
-    'today': {
-      'en': 'Today\'s Schedule',
-      'te': 'ఈరోజు షెడ్యూల్',
-      'hi': 'आज का कार्यक्रम',
-      'ta': 'இன்றைய அட்டவணை'
+    'sub': {
+      'en': 'Never miss your medicine again',
+      'te': 'మీ మందు ఎప్పుడూ మిస్ చేయకండి',
+      'hi': 'अपनी दवा कभी न भूलें',
+      'ta': 'உங்கள் மருந்தை ஒருபோதும் தவறவிடாதீர்கள்'
     },
-    'all': {
-      'en': 'All Reminders',
-      'te': 'అన్ని రిమైండర్లు',
-      'hi': 'सभी रिमाइंडर',
-      'ta': 'அனைத்து நினைவூட்டல்கள்'
+    'empty': {
+      'en': 'No reminders set yet.\nAdd a reminder to get started.',
+      'te':
+          'ఇంకా రిమైండర్లు సెట్ చేయలేదు.\nప్రారంభించడానికి రిమైండర్ జోడించండి.',
+      'hi': 'अभी कोई रिमाइंडर सेट नहीं।\nशुरू करने के लिए रिमाइंडर जोड़ें।',
+      'ta':
+          'இன்னும் நினைவூட்டல்கள் அமைக்கப்படவில்லை.\nதொடங்க நினைவூட்டல் சேர்க்கவும்.'
     },
     'add': {
-      'en': 'Add Reminder',
-      'te': 'రిమైండర్ జోడించండి',
-      'hi': 'रिमाइंडर जोड़ें',
-      'ta': 'நினைவூட்டல் சேர்க்கவும்'
+      'en': '+ Add Reminder',
+      'te': '+ రిమైండర్ జోడించు',
+      'hi': '+ रिमाइंडर जोड़ें',
+      'ta': '+ நினைவூட்டல் சேர்'
     },
-    'dose': {'en': 'Dose', 'te': 'మోతాదు', 'hi': 'खुराक', 'ta': 'மருந்தளவு'},
-    'daily': {'en': 'Daily', 'te': 'రోజువారీ', 'hi': 'दैनिक', 'ta': 'தினசரி'},
-    'taken': {
-      'en': 'Taken',
-      'te': 'తీసుకున్నారు',
-      'hi': 'ली गई',
-      'ta': 'எடுத்தாகிவிட்டது'
-    },
-    'not_taken': {
-      'en': 'Not Taken',
-      'te': 'తీసుకోలేదు',
-      'hi': 'नहीं ली',
-      'ta': 'எடுக்கவில்லை'
-    },
-    'medicine_name': {
+    'medicine': {
       'en': 'Medicine Name',
       'te': 'మందు పేరు',
       'hi': 'दवा का नाम',
       'ta': 'மருந்தின் பெயர்'
     },
-    'save': {'en': 'Save', 'te': 'సేవ్', 'hi': 'सहेजें', 'ta': 'சேமி'},
+    'time': {'en': 'Time', 'te': 'సమయం', 'hi': 'समय', 'ta': 'நேரம்'},
+    'frequency': {
+      'en': 'Frequency',
+      'te': 'పౌనఃపున్యం',
+      'hi': 'बारंबारता',
+      'ta': 'அடிக்கடி'
+    },
+    'save': {
+      'en': 'Save Reminder',
+      'te': 'రిమైండర్ సేవ్ చేయి',
+      'hi': 'रिमाइंडर सहेजें',
+      'ta': 'நினைவூட்டலை சேமி'
+    },
     'cancel': {'en': 'Cancel', 'te': 'రద్దు', 'hi': 'रद्द', 'ta': 'ரத்து'},
-    'no_reminders': {
-      'en': 'No reminders yet',
-      'te': 'ఇంకా రిమైండర్లు లేవు',
-      'hi': 'अभी कोई रिमाइंडर नहीं',
-      'ta': 'இன்னும் நினைவூட்டல்கள் இல்லை'
+    'daily': {'en': 'Daily', 'te': 'రోజువారీ', 'hi': 'दैनिक', 'ta': 'தினசரி'},
+    'twice': {
+      'en': 'Twice Daily',
+      'te': 'రోజుకు రెండుసార్లు',
+      'hi': 'दिन में दो बार',
+      'ta': 'தினமும் இரண்டு முறை'
+    },
+    'weekly': {
+      'en': 'Weekly',
+      'te': 'వారానికి ఒకసారి',
+      'hi': 'साप्ताहिक',
+      'ta': 'வாரம் ஒரு முறை'
+    },
+    'delete': {'en': 'Delete', 'te': 'తొలగించు', 'hi': 'हटाएं', 'ta': 'நீக்கு'},
+    'total': {
+      'en': 'Total Reminders',
+      'te': 'మొత్తం రిమైండర్లు',
+      'hi': 'कुल रिमाइंडर',
+      'ta': 'மொத்த நினைவூட்டல்கள்'
+    },
+    'enter_name': {
+      'en': 'Enter medicine name',
+      'te': 'మందు పేరు నమోదు చేయండి',
+      'hi': 'दवा का नाम दर्ज करें',
+      'ta': 'மருந்தின் பெயரை உள்ளிடுங்கள்'
+    },
+    'nav_home': {'en': 'Home', 'te': 'హోమ్', 'hi': 'होम', 'ta': 'முகப்பு'},
+    'nav_scan': {'en': 'Scan', 'te': 'స్కాన్', 'hi': 'स्कैन', 'ta': 'ஸ்கேன்'},
+    'nav_cabinet': {
+      'en': 'Cabinet',
+      'te': 'పెట్టె',
+      'hi': 'कैबिनेट',
+      'ta': 'பெட்டி'
+    },
+    'nav_reminders': {
+      'en': 'Reminders',
+      'te': 'రిమైండర్లు',
+      'hi': 'रिमाइंडर',
+      'ta': 'நினைவூட்டல்'
+    },
+    'nav_settings': {
+      'en': 'Settings',
+      'te': 'సెట్టింగులు',
+      'hi': 'सेटिंग्स',
+      'ta': 'அமைப்புகள்'
     },
   };
 
   String _label(String key, String lang) =>
       _labels[key]?[lang] ?? _labels[key]?['en'] ?? key;
 
-  @override
-  Widget build(BuildContext context) {
-    final lang = context.watch<LanguageProvider>().language;
-    return Scaffold(
-      backgroundColor: AppTheme.background,
-      appBar: AppBar(
-        backgroundColor: AppTheme.background,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppTheme.white),
-          onPressed: () => context.go(AppRoutes.home),
-        ),
-        title: LangText(_label('title', lang), lang,
-            fontSize: 18, fontWeight: FontWeight.bold),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add, color: AppTheme.white, size: 26),
-            onPressed: () => _showAddDialog(context, lang),
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Row(
-              children: [
-                _tabButton(_label('today', lang), 0, lang),
-                const SizedBox(width: 8),
-                _tabButton(_label('all', lang), 1, lang),
-              ],
-            ),
-          ),
-          Expanded(
-            child: _reminders.isEmpty
-                ? Center(
-                    child: LangText(_label('no_reminders', lang), lang,
-                        fontSize: 16, color: AppTheme.grey),
-                  )
-                : ListView.builder(
-                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 100),
-                    itemCount: _reminders.length,
-                    itemBuilder: (context, i) =>
-                        _reminderCard(_reminders[i], i, lang),
-                  ),
-          ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showAddDialog(context, lang),
-        backgroundColor: AppTheme.accent,
-        icon: const Icon(Icons.add, color: AppTheme.white),
-        label: LangText(_label('add', lang), lang,
-            fontSize: 14, fontWeight: FontWeight.bold),
-      ),
-    );
-  }
-
-  Widget _tabButton(String label, int index, String lang) {
-    final isSelected = _selectedTab == index;
-    return GestureDetector(
-      onTap: () => setState(() => _selectedTab = index),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-        decoration: BoxDecoration(
-          color: isSelected ? AppTheme.accent : AppTheme.card,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: LangText(label, lang,
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            color: isSelected ? AppTheme.white : AppTheme.grey),
-      ),
-    );
-  }
-
-  Widget _reminderCard(Map<String, dynamic> reminder, int index, String lang) {
-    final isTaken = reminder['taken'] as bool;
-    final isEnabled = reminder['enabled'] as bool;
-    final days = reminder['days'] as List;
-    final isDaily = days.length == 7;
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppTheme.card,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isTaken
-              ? AppTheme.success.withValues(alpha: 0.3)
-              : AppTheme.accent.withValues(alpha: 0.15),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: isTaken
-                      ? AppTheme.success.withValues(alpha: 0.15)
-                      : AppTheme.accent.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(Icons.medication,
-                    color: isTaken ? AppTheme.success : AppTheme.accent,
-                    size: 24),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(reminder['medicine'],
-                        style: const TextStyle(
-                            color: AppTheme.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16)),
-                    const SizedBox(height: 2),
-                    LangText(
-                        '${_label('dose', lang)}: ${reminder['dose']}', lang,
-                        fontSize: 13, color: AppTheme.grey),
-                  ],
-                ),
-              ),
-              Switch(
-                value: isEnabled,
-                onChanged: (val) =>
-                    setState(() => _reminders[index]['enabled'] = val),
-                activeThumbColor: AppTheme.accent,
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              const Icon(Icons.access_time, color: AppTheme.accent, size: 16),
-              const SizedBox(width: 4),
-              Text(reminder['time'],
-                  style: const TextStyle(
-                      color: AppTheme.white,
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold)),
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: AppTheme.accent.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: LangText(
-                    isDaily ? _label('daily', lang) : days.join(', '), lang,
-                    fontSize: 11, color: AppTheme.accent),
-              ),
-              const Spacer(),
-              GestureDetector(
-                onTap: () =>
-                    setState(() => _reminders[index]['taken'] = !isTaken),
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: isTaken
-                        ? AppTheme.success.withValues(alpha: 0.15)
-                        : AppTheme.grey.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        isTaken ? Icons.check_circle : Icons.circle_outlined,
-                        color: isTaken ? AppTheme.success : AppTheme.grey,
-                        size: 15,
-                      ),
-                      const SizedBox(width: 4),
-                      LangText(
-                        isTaken
-                            ? _label('taken', lang)
-                            : _label('not_taken', lang),
-                        lang,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w500,
-                        color: isTaken ? AppTheme.success : AppTheme.grey,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showAddDialog(BuildContext context, String lang) {
+  void _showAddDialog(BuildContext context, String lang, AppData appData) {
     final nameController = TextEditingController();
-    final doseController = TextEditingController();
-    TimeOfDay selectedTime = const TimeOfDay(hour: 8, minute: 0);
+    TimeOfDay selectedTime = TimeOfDay.now();
+    String selectedFreq = 'daily';
     final font = LanguageProvider.getFontFamily(lang);
 
     showDialog(
@@ -290,52 +128,118 @@ class _RemindersScreenState extends State<RemindersScreen> {
               fontSize: 16, fontWeight: FontWeight.bold),
           content: Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              TextField(
-                controller: nameController,
-                style: TextStyle(fontFamily: font, color: AppTheme.white),
-                decoration: InputDecoration(
-                  hintText: _label('medicine_name', lang),
-                  hintStyle: TextStyle(fontFamily: font, color: AppTheme.grey),
-                  enabledBorder: const UnderlineInputBorder(
-                      borderSide: BorderSide(color: AppTheme.grey)),
+              // Medicine name
+              LangText(_label('medicine', lang), lang,
+                  fontSize: 12, color: AppTheme.grey),
+              const SizedBox(height: 6),
+              Container(
+                decoration: BoxDecoration(
+                  color: AppTheme.background,
+                  borderRadius: BorderRadius.circular(8),
+                  border:
+                      Border.all(color: AppTheme.grey.withValues(alpha: 0.3)),
+                ),
+                child: TextField(
+                  controller: nameController,
+                  style: TextStyle(fontFamily: font, color: AppTheme.white),
+                  decoration: InputDecoration(
+                    hintText: _label('enter_name', lang),
+                    hintStyle:
+                        TextStyle(fontFamily: font, color: AppTheme.grey),
+                    prefixIcon: const Icon(Icons.medication,
+                        color: AppTheme.accent, size: 18),
+                    border: InputBorder.none,
+                    contentPadding:
+                        const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+                  ),
                 ),
               ),
               const SizedBox(height: 12),
-              TextField(
-                controller: doseController,
-                style: TextStyle(fontFamily: font, color: AppTheme.white),
-                decoration: InputDecoration(
-                  hintText: _label('dose', lang),
-                  hintStyle: TextStyle(fontFamily: font, color: AppTheme.grey),
-                  enabledBorder: const UnderlineInputBorder(
-                      borderSide: BorderSide(color: AppTheme.grey)),
-                ),
-              ),
-              const SizedBox(height: 12),
+              // Time picker
+              LangText(_label('time', lang), lang,
+                  fontSize: 12, color: AppTheme.grey),
+              const SizedBox(height: 6),
               GestureDetector(
                 onTap: () async {
-                  final time = await showTimePicker(
-                      context: ctx, initialTime: selectedTime);
-                  if (time != null) setDialogState(() => selectedTime = time);
+                  final picked = await showTimePicker(
+                    context: ctx,
+                    initialTime: selectedTime,
+                    builder: (context, child) => Theme(
+                      data: ThemeData.dark().copyWith(
+                        colorScheme: const ColorScheme.dark(
+                          primary: AppTheme.accent,
+                          surface: AppTheme.card,
+                        ),
+                      ),
+                      child: child!,
+                    ),
+                  );
+                  if (picked != null) {
+                    setDialogState(() => selectedTime = picked);
+                  }
                 },
                 child: Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: AppTheme.background,
                     borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                        color: AppTheme.accent.withValues(alpha: 0.4)),
                   ),
                   child: Row(
                     children: [
                       const Icon(Icons.access_time,
-                          color: AppTheme.accent, size: 20),
+                          color: AppTheme.accent, size: 18),
                       const SizedBox(width: 8),
-                      Text(selectedTime.format(context),
+                      Text(selectedTime.format(ctx),
                           style: const TextStyle(
-                              color: AppTheme.white, fontSize: 16)),
+                              color: AppTheme.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16)),
                     ],
                   ),
                 ),
+              ),
+              const SizedBox(height: 12),
+              // Frequency
+              LangText(_label('frequency', lang), lang,
+                  fontSize: 12, color: AppTheme.grey),
+              const SizedBox(height: 6),
+              Row(
+                children: ['daily', 'twice', 'weekly'].map((f) {
+                  final isSelected = selectedFreq == f;
+                  return Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.only(right: 4),
+                      child: GestureDetector(
+                        onTap: () => setDialogState(() => selectedFreq = f),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? AppTheme.accent
+                                : AppTheme.background,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                                color: isSelected
+                                    ? AppTheme.accent
+                                    : AppTheme.grey.withValues(alpha: 0.3)),
+                          ),
+                          child: Center(
+                            child: LangText(_label(f, lang), lang,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                                color: isSelected
+                                    ? AppTheme.white
+                                    : AppTheme.grey),
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
               ),
             ],
           ),
@@ -347,26 +251,16 @@ class _RemindersScreenState extends State<RemindersScreen> {
             ),
             TextButton(
               onPressed: () {
-                if (nameController.text.isNotEmpty) {
-                  setState(() => _reminders.add({
-                        'medicine': nameController.text,
-                        'time': selectedTime.format(context),
-                        'dose': doseController.text.isEmpty
-                            ? '1 tablet'
-                            : doseController.text,
-                        'days': [
-                          'Mon',
-                          'Tue',
-                          'Wed',
-                          'Thu',
-                          'Fri',
-                          'Sat',
-                          'Sun'
-                        ],
-                        'enabled': true,
-                        'taken': false,
-                      }));
-                }
+                if (nameController.text.trim().isEmpty) return;
+                appData.addReminder({
+                  'name': nameController.text.trim(),
+                  'time': selectedTime.format(ctx),
+                  'hour': selectedTime.hour,
+                  'minute': selectedTime.minute,
+                  'weekday': DateTime.now().weekday,
+                  'frequency': selectedFreq,
+                  'enabled': true,
+                });
                 Navigator.pop(ctx);
               },
               child: LangText(_label('save', lang), lang,
@@ -374,6 +268,317 @@ class _RemindersScreenState extends State<RemindersScreen> {
                   fontWeight: FontWeight.bold,
                   color: AppTheme.accent),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final lang = context.watch<LanguageProvider>().language;
+    final font = LanguageProvider.getFontFamily(lang);
+    final appData = context.watch<AppData>();
+    final reminders = appData.reminders;
+
+    return Scaffold(
+      backgroundColor: AppTheme.background,
+      body: Stack(
+        children: [
+          SafeArea(
+            child: Column(
+              children: [
+                Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  child: Row(
+                    children: [
+                      GestureDetector(
+                        onTap: () => context.go(AppRoutes.home),
+                        child: Container(
+                          width: 30,
+                          height: 30,
+                          decoration: BoxDecoration(
+                            color: AppTheme.card,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(Icons.arrow_back,
+                              color: AppTheme.white, size: 18),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            LangText(_label('title', lang), lang,
+                                fontSize: 16, fontWeight: FontWeight.bold),
+                            LangText(_label('sub', lang), lang,
+                                fontSize: 11, color: AppTheme.grey),
+                          ],
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: () => _showAddDialog(context, lang, appData),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: AppTheme.accent,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: LangText(_label('add', lang), lang,
+                              fontSize: 12, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // Stats card
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                  child: Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: AppTheme.card,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                          color: AppTheme.grey.withValues(alpha: 0.15)),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: AppTheme.teal.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(Icons.alarm,
+                              color: AppTheme.teal, size: 24),
+                        ),
+                        const SizedBox(width: 12),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            LangText(_label('total', lang), lang,
+                                fontSize: 12, color: AppTheme.grey),
+                            Text('${reminders.length}',
+                                style: const TextStyle(
+                                    color: AppTheme.white,
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.bold)),
+                          ],
+                        ),
+                        const Spacer(),
+                        GestureDetector(
+                          onTap: () => _showAddDialog(context, lang, appData),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 14, vertical: 8),
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                  colors: [AppTheme.accent, AppTheme.teal]),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.add,
+                                    color: AppTheme.white, size: 16),
+                                const SizedBox(width: 4),
+                                LangText(_label('add', lang), lang,
+                                    fontSize: 12, fontWeight: FontWeight.bold),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Expanded(
+                  child: reminders.isEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.alarm_off,
+                                  color: AppTheme.grey, size: 64),
+                              const SizedBox(height: 16),
+                              LangText(_label('empty', lang), lang,
+                                  fontSize: 15,
+                                  color: AppTheme.grey,
+                                  textAlign: TextAlign.center),
+                              const SizedBox(height: 24),
+                              GestureDetector(
+                                onTap: () =>
+                                    _showAddDialog(context, lang, appData),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 24, vertical: 12),
+                                  decoration: BoxDecoration(
+                                    gradient: const LinearGradient(colors: [
+                                      AppTheme.accent,
+                                      AppTheme.teal
+                                    ]),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: LangText(_label('add', lang), lang,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : ListView.builder(
+                          padding: const EdgeInsets.symmetric(horizontal: 14),
+                          itemCount: reminders.length,
+                          itemBuilder: (context, i) =>
+                              _reminderCard(reminders[i], i, lang, appData),
+                        ),
+                ),
+              ],
+            ),
+          ),
+          // Bottom nav
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              height: 70,
+              decoration: BoxDecoration(
+                color: AppTheme.card,
+                border: Border(
+                    top: BorderSide(
+                        color: AppTheme.grey.withValues(alpha: 0.2))),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _navItem(Icons.home, _label('nav_home', lang), false,
+                      () => context.go(AppRoutes.home), font),
+                  _navItem(Icons.qr_code_scanner, _label('nav_scan', lang),
+                      false, () => context.go(AppRoutes.scan), font),
+                  _navItem(Icons.medical_services, _label('nav_cabinet', lang),
+                      false, () => context.go(AppRoutes.cabinet), font),
+                  _navItem(Icons.alarm, _label('nav_reminders', lang), true,
+                      () => context.go(AppRoutes.reminders), font),
+                  _navItem(Icons.settings, _label('nav_settings', lang), false,
+                      () => context.go(AppRoutes.settings), font),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _reminderCard(
+      Map<String, dynamic> reminder, int index, String lang, AppData appData) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppTheme.card,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppTheme.grey.withValues(alpha: 0.15)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: AppTheme.teal.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(Icons.medication, color: AppTheme.teal, size: 26),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(reminder['name'] ?? '',
+                    style: const TextStyle(
+                        color: AppTheme.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15)),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    const Icon(Icons.access_time,
+                        color: AppTheme.accent, size: 14),
+                    const SizedBox(width: 4),
+                    Text(reminder['time'] ?? '',
+                        style: const TextStyle(
+                            color: AppTheme.accent,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600)),
+                    const SizedBox(width: 10),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: AppTheme.teal.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: LangText(
+                          _label(reminder['frequency'] ?? 'daily', lang), lang,
+                          fontSize: 10, color: AppTheme.teal),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          Column(
+            children: [
+              Switch(
+                value: reminder['enabled'] ?? true,
+                onChanged: (val) {
+                  final updated = Map<String, dynamic>.from(reminder);
+                  updated['enabled'] = val;
+                  appData.updateReminder(index, updated);
+                },
+                activeThumbColor: AppTheme.accent,
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              GestureDetector(
+                onTap: () => appData.removeReminder(index),
+                child: const Icon(Icons.delete_outline,
+                    color: AppTheme.error, size: 20),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _navItem(IconData icon, String label, bool isActive,
+      VoidCallback onTap, String font) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon,
+                color: isActive ? AppTheme.accent : AppTheme.grey, size: 26),
+            const SizedBox(height: 4),
+            Text(label,
+                style: TextStyle(
+                  fontFamily: font,
+                  color: isActive ? AppTheme.accent : AppTheme.grey,
+                  fontSize: 11,
+                  fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+                )),
           ],
         ),
       ),

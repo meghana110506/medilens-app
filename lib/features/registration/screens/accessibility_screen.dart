@@ -167,7 +167,8 @@ class _AccessibilityScreenState extends State<AccessibilityScreen> {
                     Row(
                       children: [
                         GestureDetector(
-                          onTap: () => context.go(AppRoutes.caregiverSetup),
+                          onTap: () => context
+                                .go('${AppRoutes.caregiverSetup}?from=accessibility'),
                           child: Container(
                             width: 30,
                             height: 30,

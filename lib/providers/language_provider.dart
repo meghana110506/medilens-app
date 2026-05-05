@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:medilens/core/constants.dart';
@@ -18,6 +18,11 @@ class LanguageProvider extends ChangeNotifier {
   String _caregiverName = '';
   String _caregiverPhone = '';
   String _caregiverRelation = '';
+  int _expiryDigestHour = 9;
+  int _expiryDigestMinute = 0;
+  bool _remindersNotifEnabled = true;
+  bool _expiryAlertsEnabled = true;
+  bool _notificationPermissionRequested = false;
   final FlutterTts _tts = FlutterTts();
 
   String get language => _language;
@@ -34,6 +39,12 @@ class LanguageProvider extends ChangeNotifier {
   String get caregiverName => _caregiverName;
   String get caregiverPhone => _caregiverPhone;
   String get caregiverRelation => _caregiverRelation;
+  int get expiryDigestHour => _expiryDigestHour;
+  int get expiryDigestMinute => _expiryDigestMinute;
+  bool get remindersNotifEnabled => _remindersNotifEnabled;
+  bool get expiryAlertsEnabled => _expiryAlertsEnabled;
+  bool get notificationPermissionRequested =>
+      _notificationPermissionRequested;
 
   static const Map<String, String> languageNames = {
     'en': 'English',
@@ -63,6 +74,7 @@ class LanguageProvider extends ChangeNotifier {
   }
 
   Future<void> _initTts() async {
+    await _tts.awaitSpeakCompletion(true);
     await _tts.setLanguage(ttsLanguageCodes[_language] ?? 'en-IN');
     await _tts.setSpeechRate(_voiceSpeed);
     await _tts.setVolume(1.0);
@@ -86,6 +98,17 @@ class LanguageProvider extends ChangeNotifier {
       _caregiverName = prefs.getString('caregiver_name') ?? '';
       _caregiverPhone = prefs.getString('caregiver_phone') ?? '';
       _caregiverRelation = prefs.getString('caregiver_relation') ?? '';
+      _expiryDigestHour =
+          prefs.getInt(AppConstants.keyExpiryDigestHour) ?? 9;
+      _expiryDigestMinute =
+          prefs.getInt(AppConstants.keyExpiryDigestMinute) ?? 0;
+      _remindersNotifEnabled =
+          prefs.getBool(AppConstants.keyRemindersNotifEnabled) ?? true;
+      _expiryAlertsEnabled =
+          prefs.getBool(AppConstants.keyExpiryAlertsEnabled) ?? true;
+      _notificationPermissionRequested = prefs
+              .getBool(AppConstants.keyNotificationPermissionRequested) ??
+          false;
       await _initTts();
       notifyListeners();
     } catch (e) {
@@ -143,6 +166,20 @@ class LanguageProvider extends ChangeNotifier {
     }
   }
 
+  /// Reloads only caregiver fields from storage (e.g. when SOS opens after
+  /// returning from caregiver setup) without re-running full TTS init.
+  Future<void> reloadCaregiverFromDisk() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      _caregiverName = prefs.getString('caregiver_name') ?? '';
+      _caregiverPhone = prefs.getString('caregiver_phone') ?? '';
+      _caregiverRelation = prefs.getString('caregiver_relation') ?? '';
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error reloading caregiver: $e');
+    }
+  }
+
   Future<void> setLanguage(String language) async {
     try {
       _language = language;
@@ -178,6 +215,55 @@ class LanguageProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> setExpiryDigestTime(int hour, int minute) async {
+    try {
+      _expiryDigestHour = hour.clamp(0, 23);
+      _expiryDigestMinute = minute.clamp(0, 59);
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt(AppConstants.keyExpiryDigestHour, _expiryDigestHour);
+      await prefs.setInt(
+          AppConstants.keyExpiryDigestMinute, _expiryDigestMinute);
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error saving expiry digest time: $e');
+    }
+  }
+
+  Future<void> setRemindersNotifEnabled(bool enabled) async {
+    try {
+      _remindersNotifEnabled = enabled;
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(AppConstants.keyRemindersNotifEnabled, enabled);
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error saving reminder notifications toggle: $e');
+    }
+  }
+
+  Future<void> setExpiryAlertsEnabled(bool enabled) async {
+    try {
+      _expiryAlertsEnabled = enabled;
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(AppConstants.keyExpiryAlertsEnabled, enabled);
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error saving expiry alerts toggle: $e');
+    }
+  }
+
+  /// Call after the user accepts the in-app explanation (before the OS prompt).
+  Future<void> markNotificationPermissionFlowCompleted() async {
+    try {
+      _notificationPermissionRequested = true;
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(
+          AppConstants.keyNotificationPermissionRequested, true);
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error saving notification permission flag: $e');
+    }
+  }
+
   Future<void> setBilingualEnabled(bool enabled) async {
     try {
       _bilingualEnabled = enabled;
@@ -192,24 +278,26 @@ class LanguageProvider extends ChangeNotifier {
   Future<void> speak(String text) async {
     try {
       await _tts.stop();
+      await _tts.awaitSpeakCompletion(true);
       await _tts.setLanguage(ttsLanguageCodes[_language] ?? 'en-IN');
       await _tts.setSpeechRate(_voiceSpeed);
       await _tts.setVolume(1.0);
-      await _tts.speak(text);
+      await _tts.speak(text); // now blocks until utterance is fully spoken
     } catch (e) {
-      debugPrint('TTS error: $e');
+      debugPrint('TTS speak error: $e');
     }
   }
 
   Future<void> speakInLanguage(String text, String language) async {
     try {
       await _tts.stop();
+      await _tts.awaitSpeakCompletion(true);
       await _tts.setLanguage(ttsLanguageCodes[language] ?? 'en-IN');
       await _tts.setSpeechRate(_voiceSpeed);
       await _tts.setVolume(1.0);
-      await _tts.speak(text);
+      await _tts.speak(text); // blocks until this language utterance finishes
     } catch (e) {
-      debugPrint('TTS error: $e');
+      debugPrint('TTS speakInLanguage error: $e');
     }
   }
 

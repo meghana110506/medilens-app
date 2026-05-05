@@ -1,4 +1,5 @@
-﻿import 'package:go_router/go_router.dart';
+﻿import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:medilens/features/setup/setup_screen.dart';
 import 'package:medilens/features/registration/screens/welcome_screen.dart';
 import 'package:medilens/features/registration/screens/personal_details_screen.dart';
@@ -18,6 +19,10 @@ import 'package:medilens/features/sos/sos_screen.dart';
 import 'package:medilens/features/settings/settings_screen.dart';
 
 class AppRoutes {
+  /// Used so notification taps can access [NavigatorState] / [BuildContext].
+  static final GlobalKey<NavigatorState> rootNavigatorKey =
+      GlobalKey<NavigatorState>();
+
   static const String setup = '/';
   static const String welcome = '/welcome';
   static const String personalDetails = '/personal-details';
@@ -37,6 +42,7 @@ class AppRoutes {
   static const String settings = '/settings';
 
   static final router = GoRouter(
+    navigatorKey: rootNavigatorKey,
     initialLocation: setup,
     routes: [
       GoRoute(path: setup, builder: (ctx, state) => const SetupScreen()),

@@ -1,4 +1,5 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:medilens/core/theme.dart';
@@ -198,17 +199,20 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
     );
   }
 
+  bool _isValidName(String name) => name.trim().length >= 2;
+  bool _isValidPhone(String phone) => RegExp(r'^[6-9]\d{9}$').hasMatch(phone);
+
   Future<void> _continue(String lang) async {
     // Validate required fields
-    if (_nameController.text.trim().isEmpty) {
+    if (!_isValidName(_nameController.text)) {
       _showError(_label('fill_required', lang));
       return;
     }
-    if (_phoneController.text.trim().isEmpty) {
+    if (!_isValidPhone(_phoneController.text)) {
       _showError(_label('fill_required', lang));
       return;
     }
-    if (_cityController.text.trim().isEmpty) {
+    if (!_isValidName(_cityController.text)) {
       _showError(_label('fill_required', lang));
       return;
     }
@@ -640,6 +644,10 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
           child: TextField(
             controller: controller,
             keyboardType: isPhone ? TextInputType.phone : TextInputType.text,
+            inputFormatters: isPhone ? [
+              FilteringTextInputFormatter.digitsOnly,
+              LengthLimitingTextInputFormatter(10),
+            ] : [],
             style: TextStyle(
                 fontFamily: font,
                 color: AppTheme.white,
@@ -647,9 +655,9 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
             onChanged: onChanged ?? (_) => setState(() {}),
             decoration: InputDecoration(
               prefixIcon: Icon(icon, color: AppTheme.accent, size: 20),
-              suffixIcon: controller.text.isNotEmpty
+              suffixIcon: controller.text.trim().length >= (isPhone ? 10 : 2) && (!isPhone || RegExp(r'^[6-9]\d{9}$').hasMatch(controller.text))
                   ? const Icon(Icons.check, color: AppTheme.teal, size: 16)
-                  : isRequired
+                  : isRequired && controller.text.isNotEmpty
                       ? const Icon(Icons.error_outline,
                           color: AppTheme.error, size: 16)
                       : null,

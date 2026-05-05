@@ -1,4 +1,4 @@
-﻿class AppConstants {
+class AppConstants {
   static const String appName = 'MediLens';
   static const String appVersion = '1.0.0';
 
@@ -13,6 +13,18 @@
   static const String keyBilingualEnabled = 'bilingual_enabled';
   static const String keyFirstLaunch = 'first_launch';
   static const String keyUserSetup = 'user_setup_complete';
+
+  /// Daily expiry digest + per-medicine one-shot times (local wall clock).
+  static const String keyExpiryDigestHour = 'expiry_digest_hour';
+  static const String keyExpiryDigestMinute = 'expiry_digest_minute';
+
+  /// Master toggles for scheduling local notifications.
+  static const String keyRemindersNotifEnabled = 'reminders_notif_enabled';
+  static const String keyExpiryAlertsEnabled = 'expiry_alerts_enabled';
+
+  /// After user taps Continue on the in-app explanation (before the OS dialog).
+  static const String keyNotificationPermissionRequested =
+      'notification_permission_requested';
 
   static const String dbName = 'drugs.db';
   static const String localDbName = 'medilens_local.db';
