@@ -295,7 +295,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       shape: BoxShape.circle,
                       color: provider.userPhoto.isNotEmpty
                           ? Color(int.tryParse(provider.userPhoto) ??
-                              AppTheme.accent.value)
+                              AppTheme.accent.toARGB32())
                           : AppTheme.accent,
                     ),
                     child: Center(
@@ -408,6 +408,63 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             const SizedBox(height: 12),
 
+            // Audio Language (for bilingual output)
+            _sectionLabel('🎵 ${_label('audio_lang', lang)}', font),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppTheme.card,
+                borderRadius: BorderRadius.circular(12),
+                border:
+                    Border.all(color: AppTheme.grey.withValues(alpha: 0.15)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  LangText(_label('audio_lang_desc', lang), lang,
+                      fontSize: fontSize - 2, color: AppTheme.grey),
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: LanguageProvider.languageNames.entries
+                        .map(
+                          (e) => GestureDetector(
+                            onTap: () => provider.setLanguage(e.key),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 14, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: provider.language == e.key
+                                    ? AppTheme.teal.withValues(alpha: 0.15)
+                                    : AppTheme.background,
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: provider.language == e.key
+                                      ? AppTheme.teal
+                                      : AppTheme.grey.withValues(alpha: 0.3),
+                                  width: 1.5,
+                                ),
+                              ),
+                              child: Text(e.value,
+                                  style: TextStyle(
+                                    fontFamily:
+                                        LanguageProvider.getFontFamily(e.key),
+                                    color: provider.language == e.key
+                                        ? AppTheme.teal
+                                        : AppTheme.grey,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: fontSize,
+                                  )),
+                            ),
+                          ),
+                        )
+                        .toList(),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
 
 
             // Text Size
@@ -499,6 +556,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       lang,
                       fontSize,
                       (val) => setState(() => _voiceReminders = val)),
+                  Divider(
+                      color: AppTheme.grey.withValues(alpha: 0.15), height: 20),
+                  _toggleRow(
+                      '🔆',
+                      'High Contrast Mode',
+                      'Larger text and stronger colours',
+                      provider.highContrastMode,
+                      lang,
+                      fontSize,
+                      (val) => provider.setHighContrastMode(val)),
                   const SizedBox(height: 12),
                   GestureDetector(
                     onTap: () async {
@@ -561,34 +628,36 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       LangText(_label('confidence', lang), lang,
                           fontSize: fontSize, fontWeight: FontWeight.w600),
                       const Spacer(),
-                      const Text('75%',
-                          style: TextStyle(
+                      Text('${(provider.confidenceThreshold * 100).toInt()}%',
+                          style: const TextStyle(
                               color: AppTheme.accent,
                               fontWeight: FontWeight.bold,
-                              fontSize: 13)),
+                              fontSize: 16)),
                     ],
                   ),
                   const SizedBox(height: 10),
-                  Stack(
+                  SliderTheme(
+                    data: SliderThemeData(
+                      activeTrackColor: AppTheme.accent,
+                      inactiveTrackColor: AppTheme.grey.withValues(alpha: 0.2),
+                      thumbColor: AppTheme.teal,
+                      overlayColor: AppTheme.teal.withValues(alpha: 0.2),
+                      trackHeight: 4,
+                      thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
+                    ),
+                    child: Slider(
+                      value: provider.confidenceThreshold,
+                      min: 0.75,
+                      max: 1.0,
+                      divisions: 5,
+                      onChanged: (value) => provider.setConfidenceThreshold(value),
+                    ),
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Container(
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: AppTheme.grey.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                      FractionallySizedBox(
-                        widthFactor: 0.75,
-                        child: Container(
-                          height: 4,
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                                colors: [AppTheme.accent, AppTheme.teal]),
-                            borderRadius: BorderRadius.circular(2),
-                          ),
-                        ),
-                      ),
+                      Text('75%', style: TextStyle(color: AppTheme.grey, fontSize: fontSize - 4)),
+                      Text('100%', style: TextStyle(color: AppTheme.grey, fontSize: fontSize - 4)),
                     ],
                   ),
                 ],
@@ -731,8 +800,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       color: AppTheme.grey.withValues(alpha: 0.1), height: 1),
                   GestureDetector(
                     onTap: () =>
-                        context.go('${AppRoutes.caregiverSetup}?from=settings'),
-                    child: _dataRow('👤', _label('caregivers', lang), '1 added',
+                        context.go('${AppRoutes.caregiversManage}?from=settings'),
+                    child: _dataRow('👤', _label('caregivers', lang), 
+                        '${provider.caregivers.length} added',
                         Icons.chevron_right, lang, fontSize),
                   ),
                 ],
@@ -996,10 +1066,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onPressed: () async {
               final prefs = await SharedPreferences.getInstance();
               await prefs.clear();
-              if (mounted) {
-                Navigator.pop(ctx);
-                context.go(AppRoutes.welcome);
-              }
+              if (ctx.mounted) Navigator.pop(ctx);
+              if (context.mounted) context.go(AppRoutes.welcome);
             },
             child: LangText(_label('yes', lang), lang,
                 fontSize: 14,

@@ -174,7 +174,7 @@ class _AllSetScreenState extends State<AllSetScreen>
                             shape: BoxShape.circle,
                             color: provider.userPhoto.isNotEmpty
                                 ? Color(int.tryParse(provider.userPhoto) ??
-                                    AppTheme.accent.value)
+                                    AppTheme.accent.toARGB32())
                                 : AppTheme.accent,
                           ),
                           child: Center(
@@ -245,7 +245,7 @@ class _AllSetScreenState extends State<AllSetScreen>
                           ),
                           GestureDetector(
                             onTap: () =>
-                                context.go('${AppRoutes.caregiverSetup}?from=allset'),
+                                context.go('${AppRoutes.caregiversManage}?from=allset'),
                             child: const Icon(Icons.edit,
                                 color: AppTheme.grey, size: 16),
                           ),

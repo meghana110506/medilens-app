@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:medilens/core/theme.dart';
 import 'package:medilens/core/routes.dart';
 import 'package:medilens/core/lang_text.dart';
 import 'package:medilens/providers/language_provider.dart';
-
 class PersonalDetailsScreen extends StatefulWidget {
   const PersonalDetailsScreen({super.key});
 
@@ -17,12 +17,19 @@ class PersonalDetailsScreen extends StatefulWidget {
 class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
+  final _otpController = TextEditingController();
   final _cityController = TextEditingController();
   int _age = 60;
   String _gender = 'Female';
   String _bloodGroup = 'B+';
   Color _avatarColor = AppTheme.accent;
   bool _photoSelected = false;
+  bool _otpError = false;
+
+  bool _isVerifying = false;
+  bool _isCodeSent = false;
+  bool _isVerified = false;
+  String _verificationId = '';
 
   final List<Color> _avatarColors = [
     AppTheme.accent,
@@ -127,6 +134,54 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
       'hi': 'अवतार रंग चुनें',
       'ta': 'அவதார் நிறம் தேர்ந்தெடுக்கவும்'
     },
+    'verify_phone': {
+      'en': 'Verify Number',
+      'te': 'నంబర్‌ను ధృవీకరించండి',
+      'hi': 'नंबर सत्यापित करें',
+      'ta': 'எண்ணை சரிபார்க்கவும்'
+    },
+    'enter_otp': {
+      'en': 'Enter 6-digit OTP',
+      'te': '6 అంకెల OTP ని నమోదు చేయండి',
+      'hi': '6 अंकों का OTP दर्ज करें',
+      'ta': '6 இலக்க OTP-ஐ உள்ளிடுங்கள்'
+    },
+    'invalid_otp': {
+      'en': 'Invalid or incorrect OTP',
+      'te': 'చెల్లని లేదా తప్పు OTP',
+      'hi': 'अमान्य या गलत OTP',
+      'ta': 'தவறான அல்லது செல்லாத OTP'
+    },
+    'phone_verified': {
+      'en': 'Phone Number Verified!',
+      'te': 'ఫోన్ నంబర్ ధృవీకరించబడింది!',
+      'hi': 'फ़ोन नंबर सत्यापित!',
+      'ta': 'தொலைபேசி எண் சரிபார்க்கப்பட்டது!'
+    },
+    'must_verify': {
+      'en': 'Please verify phone number before saving',
+      'te': 'దయచేసి సేవ్ చేసే ముందు ఫోన్ నంబర్‌ను ధృవీకరించండి',
+      'hi': 'सहेजने से पहले कृपया फ़ोन नंबर सत्यापित करें',
+      'ta': 'சேமிக்க முன் தொலைபேசி எண்ணை சரிபார்க்கவும்'
+    },
+    'phone_invalid': {
+      'en': 'Enter valid 10-digit phone number',
+      'te': 'చెల్లుబాటు అయ్యే 10 అంకెల ఫోన్ నంబర్ నమోదు చేయండి',
+      'hi': '10 अंकों का वैध फ़ोन नंबर दर्ज करें',
+      'ta': 'சரியான 10 இலக்க தொலைபேசி எண்ணை உள்ளிடுங்கள்'
+    },
+    'invalid_name_chars': {
+      'en': 'Name cannot contain numbers or special characters',
+      'te': 'పేరులో అంకెలు లేదా ప్రత్యేక అక్షరాలు ఉండకూడదు',
+      'hi': 'नाम में संख्याएँ या विशेष वर्ण नहीं होने चाहिए',
+      'ta': 'பெயரில் எண்கள் அல்லது சிறப்பு எழுத்துக்கள் இருக்கக்கூடாது'
+    },
+    'invalid_name_format': {
+      'en': 'Please enter both First and Last name',
+      'te': 'దయచేసి మొదటి మరియు చివరి పేరును నమోదు చేయండి',
+      'hi': 'कृपया प्रथम और अंतिम नाम दोनों दर्ज करें',
+      'ta': 'முதல் மற்றும் கடைசி பெயரை உள்ளிடவும்'
+    },
   };
 
   String _label(String key, String lang) =>
@@ -156,6 +211,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
     _nameController.dispose();
     _phoneController.dispose();
     _cityController.dispose();
+    _otpController.dispose();
     super.dispose();
   }
 
@@ -199,20 +255,121 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
     );
   }
 
-  bool _isValidName(String name) => name.trim().length >= 2;
+  // Using unicode: true allows letters from any language but strictly no numbers/symbols
+  bool _isValidNameChars(String name) => RegExp(r'^[\p{L}\s]+$', unicode: true).hasMatch(name);
+  bool _hasFirstAndLastName(String name) => name.trim().split(RegExp(r'\s+')).length >= 2;
+  
   bool _isValidPhone(String phone) => RegExp(r'^[6-9]\d{9}$').hasMatch(phone);
+
+  Future<void> _verifyPhoneNumber(String lang) async {
+    final phone = _phoneController.text.trim();
+    if (!_isValidPhone(phone)) {
+      _showError(_label('phone_invalid', lang));
+      return;
+    }
+    
+    setState(() => _isVerifying = true);
+
+    try {
+      await FirebaseAuth.instance.verifyPhoneNumber(
+        phoneNumber: '+91$phone',
+        verificationCompleted: (PhoneAuthCredential credential) async {
+          await FirebaseAuth.instance.signInWithCredential(credential);
+          if (mounted) {
+            setState(() {
+              _isVerified = true;
+              _isVerifying = false;
+              _isCodeSent = false;
+            });
+            _showSuccess(_label('phone_verified', lang));
+          }
+        },
+        verificationFailed: (FirebaseAuthException e) {
+          if (mounted) {
+            setState(() => _isVerifying = false);
+            _showError(e.message ?? 'Verification failed');
+          }
+        },
+        codeSent: (String verificationId, int? resendToken) {
+          if (mounted) {
+            setState(() {
+              _verificationId = verificationId;
+              _isCodeSent = true;
+              _isVerifying = false;
+            });
+          }
+        },
+        codeAutoRetrievalTimeout: (String verificationId) {
+          if (mounted) {
+            _verificationId = verificationId;
+          }
+        },
+      );
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isVerifying = false);
+        _showError(e.toString());
+      }
+    }
+  }
+
+  Future<void> _submitOTP(String lang) async {
+    final otp = _otpController.text.trim();
+    if (otp.length != 6) {
+      setState(() => _otpError = true);
+      return;
+    }
+    setState(() => _isVerifying = true);
+    try {
+      final credential = PhoneAuthProvider.credential(
+        verificationId: _verificationId,
+        smsCode: otp,
+      );
+      await FirebaseAuth.instance.signInWithCredential(credential);
+      if (mounted) {
+        setState(() {
+          _isVerified = true;
+          _isCodeSent = false;
+          _isVerifying = false;
+        });
+        _showSuccess(_label('phone_verified', lang));
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _otpError = true;
+          _isVerifying = false;
+        });
+        _showError(_label('invalid_otp', lang));
+      }
+    }
+  }
 
   Future<void> _continue(String lang) async {
     // Validate required fields
-    if (!_isValidName(_nameController.text)) {
+    final name = _nameController.text.trim();
+    if (name.isEmpty) {
       _showError(_label('fill_required', lang));
       return;
     }
+    if (!_isValidNameChars(name)) {
+      _showError(_label('invalid_name_chars', lang));
+      return;
+    }
+    if (!_hasFirstAndLastName(name)) {
+      _showError(_label('invalid_name_format', lang));
+      return;
+    }
+
     if (!_isValidPhone(_phoneController.text)) {
       _showError(_label('fill_required', lang));
       return;
     }
-    if (!_isValidName(_cityController.text)) {
+    if (!_isVerified) {
+      _showError(_label('must_verify', lang));
+      return;
+    }
+    if (_cityController.text.trim().isEmpty) {
       _showError(_label('fill_required', lang));
       return;
     }
@@ -225,7 +382,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
           blood: _bloodGroup,
           gender: _gender,
           phone: _phoneController.text.trim(),
-          photo: _avatarColor.value.toString(),
+          photo: _avatarColor.toARGB32().toString(),
         );
 
     if (mounted) context.go(AppRoutes.healthProfile);
@@ -237,6 +394,12 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
         content: Text(message),
         backgroundColor: AppTheme.error,
       ),
+    );
+  }
+
+  void _showSuccess(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: AppTheme.teal),
     );
   }
 
@@ -493,15 +656,155 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
                     const SizedBox(height: 10),
 
                     // Phone
-                    _inputField(
-                      controller: _phoneController,
-                      label: _label('phone', lang),
-                      icon: Icons.phone,
-                      font: font,
-                      fontSize: fontSize,
-                      isPhone: true,
-                      isRequired: true,
+                    LangText('${_label('phone', lang)} *', lang,
+                        fontSize: fontSize - 3,
+                        color: AppTheme.grey,
+                        fontWeight: FontWeight.w600),
+                    const SizedBox(height: 4),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: AppTheme.card,
+                        borderRadius: BorderRadius.circular(11),
+                        border: Border.all(
+                          color: _phoneController.text.isNotEmpty
+                              ? AppTheme.teal.withValues(alpha: 0.8)
+                              : AppTheme.error.withValues(alpha: 0.4),
+                        ),
+                      ),
+                      child: TextField(
+                        controller: _phoneController,
+                        keyboardType: TextInputType.phone,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                          LengthLimitingTextInputFormatter(10),
+                        ],
+                        style: TextStyle(
+                            fontFamily: font,
+                            color: AppTheme.white,
+                            fontSize: fontSize - 2),
+                        onChanged: (_) {
+                          if (_isVerified || _isCodeSent) {
+                            setState(() {
+                              _isVerified = false;
+                              _isCodeSent = false;
+                              _verificationId = '';
+                            });
+                          }
+                          setState(() {});
+                        },
+                        decoration: InputDecoration(
+                          prefixIcon: const Icon(Icons.phone,
+                              color: AppTheme.accent, size: 20),
+                          suffixIcon: _isVerified
+                              ? const Icon(Icons.verified, color: AppTheme.teal, size: 18)
+                              : _isValidPhone(_phoneController.text)
+                              ? const Icon(Icons.check,
+                                  color: AppTheme.teal, size: 16)
+                              : _phoneController.text.isNotEmpty
+                                  ? const Icon(Icons.error_outline,
+                                      color: AppTheme.error, size: 16)
+                                  : null,
+                          border: InputBorder.none,
+                          contentPadding: const EdgeInsets.symmetric(
+                              vertical: 12, horizontal: 8),
+                        ),
+                      ),
                     ),
+                    if (!_isVerified && !_isCodeSent)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 12),
+                        child: Align(
+                          alignment: Alignment.centerRight,
+                          child: GestureDetector(
+                            onTap: _isVerifying ? null : () => _verifyPhoneNumber(lang),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                              decoration: BoxDecoration(
+                                color: _isVerifying ? AppTheme.grey.withValues(alpha: 0.3) : AppTheme.accent.withValues(alpha: 0.2),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: _isVerifying ? AppTheme.grey : AppTheme.accent),
+                              ),
+                              child: _isVerifying
+                                ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.accent))
+                                : LangText(_label('verify_phone', lang), lang, fontSize: fontSize - 2, color: AppTheme.accent, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ),
+                      ),
+                      
+                    if (_isCodeSent)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            LangText('${_label('enter_otp', lang)} *', lang,
+                                fontSize: fontSize - 3,
+                                color: _otpError ? AppTheme.error : AppTheme.grey,
+                                fontWeight: FontWeight.w600),
+                            const SizedBox(height: 4),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: AppTheme.card,
+                                      borderRadius: BorderRadius.circular(11),
+                                      border: Border.all(
+                                        color: _otpError
+                                            ? AppTheme.error
+                                            : _otpController.text.isNotEmpty
+                                                ? AppTheme.teal.withValues(alpha: 0.8)
+                                                : AppTheme.grey.withValues(alpha: 0.3),
+                                      ),
+                                    ),
+                                    child: TextField(
+                                      controller: _otpController,
+                                      keyboardType: TextInputType.number,
+                                      style: TextStyle(
+                                          fontFamily: font,
+                                          color: AppTheme.white,
+                                          fontSize: fontSize - 2),
+                                      inputFormatters: [
+                                        FilteringTextInputFormatter.digitsOnly,
+                                        LengthLimitingTextInputFormatter(6),
+                                      ],
+                                      onChanged: (_) => setState(() => _otpError = false),
+                                      decoration: const InputDecoration(
+                                        prefixIcon: Icon(Icons.security,
+                                            color: AppTheme.accent, size: 20),
+                                        border: InputBorder.none,
+                                        contentPadding: EdgeInsets.symmetric(
+                                            vertical: 12, horizontal: 8),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                GestureDetector(
+                                  onTap: _isVerifying ? null : () => _submitOTP(lang),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                    decoration: BoxDecoration(
+                                      color: _isVerifying ? AppTheme.grey.withValues(alpha: 0.3) : AppTheme.teal,
+                                      borderRadius: BorderRadius.circular(11),
+                                    ),
+                                    child: _isVerifying
+                                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.white))
+                                      : const Icon(Icons.arrow_forward, color: AppTheme.white, size: 20),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            if (_otpError)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 4, left: 4),
+                                child: LangText(_label('invalid_otp', lang), lang,
+                                    fontSize: fontSize - 5, color: AppTheme.error),
+                              ),
+                          ],
+                        ),
+                      ),
                     const SizedBox(height: 10),
 
                     // City

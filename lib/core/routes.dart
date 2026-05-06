@@ -4,7 +4,7 @@ import 'package:medilens/features/setup/setup_screen.dart';
 import 'package:medilens/features/registration/screens/welcome_screen.dart';
 import 'package:medilens/features/registration/screens/personal_details_screen.dart';
 import 'package:medilens/features/registration/screens/health_profile_screen.dart';
-import 'package:medilens/features/registration/screens/caregiver_setup_screen.dart';
+import 'package:medilens/features/registration/screens/caregivers_manage_screen.dart';
 import 'package:medilens/features/registration/screens/accessibility_screen.dart';
 import 'package:medilens/features/registration/screens/all_set_screen.dart';
 import 'package:medilens/features/home/home_screen.dart';
@@ -27,7 +27,7 @@ class AppRoutes {
   static const String welcome = '/welcome';
   static const String personalDetails = '/personal-details';
   static const String healthProfile = '/health-profile';
-  static const String caregiverSetup = '/caregiver-setup';
+  static const String caregiversManage = '/caregivers-manage';
   static const String accessibility = '/accessibility';
   static const String allSet = '/all-set';
   static const String home = '/home';
@@ -54,8 +54,8 @@ class AppRoutes {
           path: healthProfile,
           builder: (ctx, state) => const HealthProfileScreen()),
       GoRoute(
-          path: caregiverSetup,
-          builder: (ctx, state) => const CaregiverSetupScreen()),
+          path: caregiversManage,
+          builder: (ctx, state) => const CaregiversManageScreen()),
       GoRoute(
           path: accessibility,
           builder: (ctx, state) => const AccessibilityScreen()),

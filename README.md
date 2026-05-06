@@ -97,6 +97,7 @@ MediLens lets users scan medicine labels, get detailed information in their nati
 | provider | State management |
 | shared_preferences | Local settings storage |
 | connectivity_plus | Network status detection |
+| firebase_auth | Caregiver phone verification |
 | Noto Sans Fonts | Multilingual typography |
 
 ---
@@ -152,6 +153,13 @@ assets/
 - Flutter SDK 3.x
 - Android Studio or VS Code
 - Android device or emulator (API 21+)
+- Firebase Project with Phone Authentication enabled
+
+### Firebase Setup
+Before running the app, you must link it to a Firebase project:
+1. Ensure Firebase CLI is installed (`npm install -g firebase-tools`) and log in (`firebase login`).
+2. Install the FlutterFire CLI: `dart pub global activate flutterfire_cli`
+3. Run `flutterfire configure` to generate `lib/firebase_options.dart`.
 
 ### Run
 

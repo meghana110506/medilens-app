@@ -5,6 +5,7 @@ import 'package:medilens/core/theme.dart';
 import 'package:medilens/core/routes.dart';
 import 'package:medilens/core/lang_text.dart';
 import 'package:medilens/core/app_data.dart';
+import 'package:medilens/core/widgets/sos_fab.dart';
 import 'package:medilens/providers/language_provider.dart';
 
 class CabinetScreen extends StatefulWidget {
@@ -16,6 +17,8 @@ class CabinetScreen extends StatefulWidget {
 
 class _CabinetScreenState extends State<CabinetScreen> {
   String _searchQuery = '';
+  // null = all, 'valid', 'expiring', 'expired'
+  String? _filterStatus;
 
   final Map<String, Map<String, String>> _labels = {
     'title': {'en': 'My Cabinet', 'te': 'నా మందుల పెట్టె', 'hi': 'मेरी दवाएं', 'ta': 'என் மருந்துக் கொட்டகை'},
@@ -28,6 +31,9 @@ class _CabinetScreenState extends State<CabinetScreen> {
     'valid': {'en': 'Valid', 'te': 'చెల్లుబాటు', 'hi': 'वैध', 'ta': 'செல்லுபடியாகும்'},
     'expiring': {'en': 'Expiring', 'te': 'గడువు దగ్గరలో', 'hi': 'जल्द समाप्त', 'ta': 'விரைவில் காலாவதி'},
     'expired': {'en': 'Expired', 'te': 'గడువు తీరింది', 'hi': 'समाप्त', 'ta': 'காலாவதியானது'},
+    'all': {'en': 'All', 'te': 'అన్నీ', 'hi': 'सभी', 'ta': 'அனைத்தும்'},
+    'filter': {'en': 'Filter', 'te': 'ఫిల్టర్', 'hi': 'फ़िल्टर', 'ta': 'வடிகட்டு'},
+    'no_results': {'en': 'No medicines match your filter.', 'te': 'మీ ఫిల్టర్‌కు సరిపోయే మందులు లేవు.', 'hi': 'आपके फ़िल्टर से कोई दवा नहीं मिली।', 'ta': 'உங்கள் வடிகட்டிக்கு பொருந்தும் மருந்துகள் இல்லை.'},
   };
 
   String _label(String key, String lang) =>
@@ -38,14 +44,20 @@ class _CabinetScreenState extends State<CabinetScreen> {
     final lang = context.watch<LanguageProvider>().language;
     final font = LanguageProvider.getFontFamily(lang);
     final appData = context.watch<AppData>();
-    final medicines = appData.cabinet.where((m) =>
-      _searchQuery.isEmpty ||
-      m.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-      m.generic.toLowerCase().contains(_searchQuery.toLowerCase())
-    ).toList();
+
+    // Apply search + filter
+    final medicines = appData.cabinet.where((m) {
+      final matchesSearch = _searchQuery.isEmpty ||
+          m.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+          m.generic.toLowerCase().contains(_searchQuery.toLowerCase());
+      final matchesFilter =
+          _filterStatus == null || m.expiryStatus == _filterStatus;
+      return matchesSearch && matchesFilter;
+    }).toList();
 
     return Scaffold(
       backgroundColor: AppTheme.background,
+      floatingActionButton: const SOSFab(),
       appBar: AppBar(
         backgroundColor: AppTheme.background,
         leading: IconButton(
@@ -53,7 +65,7 @@ class _CabinetScreenState extends State<CabinetScreen> {
           onPressed: () => context.go(AppRoutes.home),
         ),
         title: LangText(_label('title', lang), lang,
-          fontSize: 18, fontWeight: FontWeight.bold),
+            fontSize: 18, fontWeight: FontWeight.bold),
         actions: [
           IconButton(
             icon: const Icon(Icons.camera_alt, color: AppTheme.white),
@@ -64,34 +76,38 @@ class _CabinetScreenState extends State<CabinetScreen> {
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
             child: Column(
               children: [
+                // Stats row
                 Container(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
                     color: AppTheme.card,
-                    borderRadius: BorderRadius.circular(16)),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
                   child: Row(
                     children: [
                       Container(
-                        width: 52, height: 52,
+                        width: 48, height: 48,
                         decoration: BoxDecoration(
                           color: AppTheme.accent.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(14),
+                          borderRadius: BorderRadius.circular(12),
                         ),
                         child: const Icon(Icons.medical_services,
-                          color: AppTheme.accent, size: 28),
+                            color: AppTheme.accent, size: 26),
                       ),
-                      const SizedBox(width: 16),
+                      const SizedBox(width: 12),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           LangText(_label('total', lang), lang,
-                            fontSize: 13, color: AppTheme.grey),
+                              fontSize: 12, color: AppTheme.grey),
                           Text('${appData.cabinet.length}',
-                            style: const TextStyle(color: AppTheme.white,
-                              fontSize: 28, fontWeight: FontWeight.bold)),
+                              style: const TextStyle(
+                                  color: AppTheme.white,
+                                  fontSize: 26,
+                                  fontWeight: FontWeight.bold)),
                         ],
                       ),
                       const Spacer(),
@@ -99,16 +115,18 @@ class _CabinetScreenState extends State<CabinetScreen> {
                         onTap: () => context.go(AppRoutes.scan),
                         child: Container(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 8),
+                              horizontal: 14, vertical: 8),
                           decoration: BoxDecoration(
                             color: AppTheme.accent,
-                            borderRadius: BorderRadius.circular(10)),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
                           child: Row(
                             children: [
-                              const Icon(Icons.add, color: AppTheme.white, size: 18),
+                              const Icon(Icons.add,
+                                  color: AppTheme.white, size: 16),
                               const SizedBox(width: 4),
                               LangText(_label('add', lang), lang,
-                                fontSize: 12, fontWeight: FontWeight.bold),
+                                  fontSize: 12, fontWeight: FontWeight.bold),
                             ],
                           ),
                         ),
@@ -116,108 +134,177 @@ class _CabinetScreenState extends State<CabinetScreen> {
                     ],
                   ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 10),
+                // Search bar
                 Container(
                   decoration: BoxDecoration(
                     color: AppTheme.card,
-                    borderRadius: BorderRadius.circular(16)),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                   child: TextField(
                     style: TextStyle(fontFamily: font, color: AppTheme.white),
                     onChanged: (val) => setState(() => _searchQuery = val),
                     decoration: InputDecoration(
                       hintText: _label('search', lang),
-                      hintStyle: TextStyle(fontFamily: font, color: AppTheme.grey),
-                      prefixIcon: const Icon(Icons.search, color: AppTheme.accent),
+                      hintStyle:
+                          TextStyle(fontFamily: font, color: AppTheme.grey),
+                      prefixIcon:
+                          const Icon(Icons.search, color: AppTheme.accent),
                       border: InputBorder.none,
-                      contentPadding: const EdgeInsets.all(16),
+                      contentPadding: const EdgeInsets.all(14),
                     ),
                   ),
                 ),
+                const SizedBox(height: 10),
+                // Filter chips
+                Row(
+                  children: [
+                    LangText(_label('filter', lang), lang,
+                        fontSize: 12, color: AppTheme.grey),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: [
+                            _filterChip(null, _label('all', lang), AppTheme.accent, lang),
+                            const SizedBox(width: 6),
+                            _filterChip('valid', _label('valid', lang), AppTheme.success, lang),
+                            const SizedBox(width: 6),
+                            _filterChip('expiring', _label('expiring', lang), AppTheme.warning, lang),
+                            const SizedBox(width: 6),
+                            _filterChip('expired', _label('expired', lang), AppTheme.error, lang),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
               ],
             ),
           ),
           Expanded(
             child: medicines.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.medical_services,
-                        color: AppTheme.grey, size: 64),
-                      const SizedBox(height: 16),
-                      LangText(_label('empty', lang), lang,
-                        fontSize: 15, color: AppTheme.grey,
-                        textAlign: TextAlign.center),
-                      const SizedBox(height: 24),
-                      GestureDetector(
-                        onTap: () => context.go(AppRoutes.scan),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 24, vertical: 12),
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [AppTheme.accent, AppTheme.teal]),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(Icons.camera_alt,
-                                color: AppTheme.white, size: 20),
-                              const SizedBox(width: 8),
-                              LangText(_label('add', lang), lang,
-                                fontSize: 14, fontWeight: FontWeight.bold),
-                            ],
-                          ),
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.medical_services,
+                            color: AppTheme.grey, size: 64),
+                        const SizedBox(height: 16),
+                        LangText(
+                          _filterStatus != null || _searchQuery.isNotEmpty
+                              ? _label('no_results', lang)
+                              : _label('empty', lang),
+                          lang,
+                          fontSize: 14,
+                          color: AppTheme.grey,
+                          textAlign: TextAlign.center,
                         ),
-                      ),
-                    ],
+                        if (_filterStatus == null && _searchQuery.isEmpty) ...[
+                          const SizedBox(height: 24),
+                          GestureDetector(
+                            onTap: () => context.go(AppRoutes.scan),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 24, vertical: 12),
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(
+                                    colors: [AppTheme.accent, AppTheme.teal]),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.camera_alt,
+                                      color: AppTheme.white, size: 20),
+                                  const SizedBox(width: 8),
+                                  LangText(_label('add', lang), lang,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 100),
+                    itemCount: medicines.length,
+                    itemBuilder: (context, i) =>
+                        _medicineCard(medicines[i], appData.cabinet.indexOf(medicines[i]), lang, appData),
                   ),
-                )
-              : ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  itemCount: medicines.length,
-                  itemBuilder: (context, i) =>
-                    _medicineCard(medicines[i], i, lang, appData),
-                ),
           ),
         ],
       ),
     );
   }
 
-  Widget _medicineCard(MedicineEntry medicine, int index,
-      String lang, AppData appData) {
+  Widget _filterChip(String? status, String label, Color color, String lang) {
+    final isSelected = _filterStatus == status;
+    return GestureDetector(
+      onTap: () => setState(() => _filterStatus = status),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected ? color.withValues(alpha: 0.2) : AppTheme.card,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected ? color : AppTheme.grey.withValues(alpha: 0.3),
+            width: isSelected ? 1.5 : 1,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? color : AppTheme.grey,
+            fontSize: 12,
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+            fontFamily: LanguageProvider.getFontFamily(lang),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _medicineCard(
+      MedicineEntry medicine, int index, String lang, AppData appData) {
     final statusColor = medicine.expiryStatus == 'valid'
-      ? AppTheme.success
-      : medicine.expiryStatus == 'expiring'
-        ? AppTheme.warning : AppTheme.error;
+        ? AppTheme.success
+        : medicine.expiryStatus == 'expiring'
+            ? AppTheme.warning
+            : AppTheme.error;
     final statusLabel = medicine.expiryStatus == 'valid'
-      ? _label('valid', lang)
-      : medicine.expiryStatus == 'expiring'
-        ? _label('expiring', lang) : _label('expired', lang);
+        ? _label('valid', lang)
+        : medicine.expiryStatus == 'expiring'
+            ? _label('expiring', lang)
+            : _label('expired', lang);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: AppTheme.card,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color: medicine.expiryStatus == 'expired'
-            ? AppTheme.error.withValues(alpha: 0.3)
-            : AppTheme.grey.withValues(alpha: 0.15)),
+              ? AppTheme.error.withValues(alpha: 0.3)
+              : AppTheme.grey.withValues(alpha: 0.15),
+        ),
       ),
       child: Row(
         children: [
           Container(
-            width: 52, height: 52,
+            width: 50, height: 50,
             decoration: BoxDecoration(
               color: statusColor.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(12),
             ),
             child: const Icon(Icons.medication,
-              color: AppTheme.accent, size: 28),
+                color: AppTheme.accent, size: 26),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -225,17 +312,19 @@ class _CabinetScreenState extends State<CabinetScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(medicine.name,
-                  style: const TextStyle(color: AppTheme.white,
-                    fontWeight: FontWeight.bold, fontSize: 15)),
+                    style: const TextStyle(
+                        color: AppTheme.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15)),
                 Text(medicine.generic,
-                  style: const TextStyle(color: AppTheme.grey, fontSize: 12)),
+                    style:
+                        const TextStyle(color: AppTheme.grey, fontSize: 12)),
                 const SizedBox(height: 4),
-                Row(
+                Wrap(
+                  spacing: 6,
                   children: [
                     _chip(medicine.strength, AppTheme.accent),
-                    const SizedBox(width: 6),
                     _chip(medicine.type, AppTheme.teal),
-                    const SizedBox(width: 6),
                     _chip(statusLabel, statusColor),
                   ],
                 ),
@@ -243,17 +332,25 @@ class _CabinetScreenState extends State<CabinetScreen> {
                   Padding(
                     padding: const EdgeInsets.only(top: 4),
                     child: Text('Exp: ${medicine.expiryDate}',
-                      style: TextStyle(color: statusColor, fontSize: 11)),
+                        style:
+                            TextStyle(color: statusColor, fontSize: 11)),
                   ),
               ],
             ),
           ),
-          PopupMenuButton(
+          PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert, color: AppTheme.grey),
             color: AppTheme.card,
+            onSelected: (val) {
+              if (val == 'reminder') {
+                context.go(AppRoutes.reminders);
+              } else if (val == 'delete') {
+                appData.removeMedicine(index);
+              }
+            },
             itemBuilder: (ctx) => [
               PopupMenuItem(
-                onTap: () => context.go(AppRoutes.reminders),
+                value: 'reminder',
                 child: Row(children: [
                   const Icon(Icons.alarm, color: AppTheme.accent, size: 18),
                   const SizedBox(width: 8),
@@ -261,12 +358,12 @@ class _CabinetScreenState extends State<CabinetScreen> {
                 ]),
               ),
               PopupMenuItem(
-                onTap: () => appData.removeMedicine(index),
+                value: 'delete',
                 child: Row(children: [
                   const Icon(Icons.delete, color: AppTheme.error, size: 18),
                   const SizedBox(width: 8),
                   LangText(_label('delete', lang), lang,
-                    fontSize: 14, color: AppTheme.error),
+                      fontSize: 14, color: AppTheme.error),
                 ]),
               ),
             ],
@@ -284,8 +381,8 @@ class _CabinetScreenState extends State<CabinetScreen> {
         borderRadius: BorderRadius.circular(4),
       ),
       child: Text(label,
-        style: TextStyle(color: color,
-          fontSize: 10, fontWeight: FontWeight.w500)),
+          style: TextStyle(
+              color: color, fontSize: 10, fontWeight: FontWeight.w500)),
     );
   }
 }

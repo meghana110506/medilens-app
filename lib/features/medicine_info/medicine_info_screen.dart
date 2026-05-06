@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:medilens/core/theme.dart';
@@ -24,10 +24,40 @@ class _MedicineInfoScreenState extends State<MedicineInfoScreen> {
     if (widget.medicineData != null && widget.medicineData!.isNotEmpty) {
       final data = widget.medicineData!;
       final expiry = data['expiry_date'] as String? ?? 'Check package';
+      final confidence = data['confidence'] as int? ?? 85;
+      
+      // Extract strength and type from composition or pack_size
+      String strength = 'Check package';
+      String type = 'Medicine';
+      
+      final composition = data['composition'] as String? ?? '';
+      final packSize = data['pack_size'] as String? ?? '';
+      
+      // Try to extract strength from composition (e.g., "Metformin 500mg")
+      final strengthMatch = RegExp(r'(\d+\s*(?:mg|g|ml|mcg|iu))', caseSensitive: false).firstMatch(composition);
+      if (strengthMatch != null) {
+        strength = strengthMatch.group(1)!;
+      }
+      
+      // Try to determine type from pack_size or composition
+      if (packSize.toLowerCase().contains('tablet') || composition.toLowerCase().contains('tablet')) {
+        type = 'Tablet';
+      } else if (packSize.toLowerCase().contains('capsule') || composition.toLowerCase().contains('capsule')) {
+        type = 'Capsule';
+      } else if (packSize.toLowerCase().contains('syrup') || composition.toLowerCase().contains('syrup')) {
+        type = 'Syrup';
+      } else if (packSize.toLowerCase().contains('injection') || composition.toLowerCase().contains('injection')) {
+        type = 'Injection';
+      } else if (packSize.toLowerCase().contains('cream') || composition.toLowerCase().contains('cream')) {
+        type = 'Cream';
+      }
+      
       return {
         'name': data['brand_name'] ?? data['generic_name'] ?? 'Unknown Medicine',
         'generic': data['generic_name'] ?? data['brand_name'] ?? '',
-        'confidence': 94,
+        'confidence': confidence,
+        'strength': strength,
+        'type': type,
         'dosage': {
           'en': data['dosage'] ?? '1 tablet as prescribed',
           'te': data['dosage'] ?? 'వైద్యుడు సూచించినట్లు 1 మాత్ర',
@@ -58,7 +88,9 @@ class _MedicineInfoScreenState extends State<MedicineInfoScreen> {
     return {
       'name': 'Metformin HCl',
       'generic': 'Metformin Hydrochloride 500mg',
-      'confidence': 94,
+      'confidence': 85,
+      'strength': '500mg',
+      'type': 'Tablet',
       'dosage': {
         'en': '500mg — 1 tablet, twice daily',
         'te': '500mg — రోజుకు రెండుసార్లు 1 మాత్ర',
@@ -160,8 +192,8 @@ class _MedicineInfoScreenState extends State<MedicineInfoScreen> {
     final entry = MedicineEntry(
       name: _medicine['name'] as String,
       generic: _medicine['generic'] as String,
-      strength: '500mg',
-      type: 'Tablet',
+      strength: _medicine['strength'] as String,
+      type: _medicine['type'] as String,
       expiryDate: expiry,
       expiryStatus: AppData.getExpiryStatus(expiry),
       addedOn: DateTime.now(),
@@ -627,10 +659,11 @@ class _MedicineInfoScreenState extends State<MedicineInfoScreen> {
     final isSelected = _selectedAudioLangs.contains(code);
     return GestureDetector(
       onTap: () => setState(() {
-        if (isSelected)
+        if (isSelected) {
           _selectedAudioLangs.remove(code);
-        else
+        } else {
           _selectedAudioLangs.add(code);
+        }
       }),
       child: Container(
         padding:

@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_sms/flutter_sms.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:medilens/services/sms_service.dart';
 import 'package:go_router/go_router.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:medilens/core/theme.dart';
 import 'package:medilens/core/routes.dart';
 import 'package:medilens/core/lang_text.dart';
@@ -40,6 +38,7 @@ class _SosScreenState extends State<SosScreen>
     'sms': {'en': 'SMS', 'te': 'SMS', 'hi': 'SMS', 'ta': 'SMS'},
     'voice_label': {'en': 'Voice', 'te': 'వాయిస్', 'hi': 'आवाज़', 'ta': 'குரல்'},
     'manage': {'en': 'Manage Caregivers →', 'te': 'సంరక్షకులను నిర్వహించండి →', 'hi': 'देखभालकर्ताओं को प्रबंधित करें →', 'ta': 'பராமரிப்பாளர்களை நிர்வகிக்கவும் →'},
+    'add_caregiver': {'en': 'Add Another Caregiver', 'te': 'మరొక సంరక్షకుడిని జోడించండి', 'hi': 'एक और देखभालकर्ता जोड़ें', 'ta': 'மற்றொரு பராமரிப்பாளரை சேர்க்கவும்'},
     'sent_title': {'en': 'SOS Sent!', 'te': 'SOS పంపబడింది!', 'hi': 'SOS भेजा गया!', 'ta': 'SOS அனுப்பப்பட்டது!'},
     'sent_sub': {'en': 'SMS sent to caregiver. Voice alert played.', 'te': 'SMS సంరక్షకుడికి పంపబడింది. వాయిస్ అలర్ట్ ప్లే అయింది.', 'hi': 'SMS देखभालकर्ता को भेजा गया।', 'ta': 'SMS பராமரிப்பாளருக்கு அனுப்பப்பட்டது.'},
     'sent_at': {'en': 'Sent at', 'te': 'పంపిన సమయం', 'hi': 'भेजा गया', 'ta': 'அனுப்பிய நேரம்'},
@@ -82,9 +81,13 @@ class _SosScreenState extends State<SosScreen>
 
   Future<void> _sendSOS(String lang) async {
     final provider = context.read<LanguageProvider>();
-    final phone = provider.caregiverPhone.trim().isEmpty
-        ? '+919876511111'
-        : provider.caregiverPhone.trim();
+    
+    // Check if any caregivers exist
+    if (provider.caregivers.isEmpty) {
+      _showError('No caregiver registered. Please add a caregiver first.');
+      return;
+    }
+    
     final patientName =
         provider.userName.trim().isEmpty ? 'Patient' : provider.userName.trim();
 
@@ -99,7 +102,7 @@ class _SosScreenState extends State<SosScreen>
                   : 'Sending emergency SOS alert',
     );
     if (provider.bilingualEnabled && lang != 'en') {
-      await provider.speakInLanguage('Emergency SOS sent to your caregiver.', 'en');
+      await provider.speakInLanguage('Emergency SOS sent to your caregivers.', 'en');
     }
 
     // Build SMS body
@@ -134,42 +137,25 @@ class _SosScreenState extends State<SosScreen>
       body += '\n\n(Location currently unavailable)';
     }
 
-    bool smsSent = false;
+    // Send to all caregivers
+    final phones = provider.caregivers
+        .map((c) => c['phone'] ?? '')
+        .where((p) => p.isNotEmpty)
+        .toList();
+    
+    final successCount = await SmsService.sendToMultiple(phones: phones, message: body);
+    debugPrint('SOS SMS sent to $successCount/${phones.length} caregivers');
 
-    // --- Attempt 1: Direct send via flutter_sms (no user interaction needed) ---
-    try {
-      final smsPerm = await Permission.sms.request();
-      if (smsPerm.isGranted) {
-        final result = await sendSMS(
-          message: body,
-          recipients: [phone],
-          sendDirect: true, // send without opening SMS app
-        );
-        debugPrint('flutter_sms result: $result');
-        smsSent = true;
-      }
-    } catch (e) {
-      debugPrint('flutter_sms direct send failed: $e');
-    }
-
-    // --- Attempt 2: Fallback — open SMS compose screen ---
-    if (!smsSent) {
-      try {
-        final encoded = Uri.encodeComponent(body);
-        final smsUri = Uri.parse('sms:$phone?body=$encoded');
-        if (await canLaunchUrl(smsUri)) {
-          await launchUrl(smsUri);
-          smsSent = true;
-        }
-      } catch (e) {
-        debugPrint('SMS url_launcher fallback error: $e');
-      }
-    }
-
-    // Show SOS sent overlay (only after actual send / fallback attempted)
+    // Show SOS sent overlay
     if (mounted) {
       setState(() => _sosSent = true);
     }
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: AppTheme.error),
+    );
   }
 
   @override
@@ -178,14 +164,8 @@ class _SosScreenState extends State<SosScreen>
     final lang = provider.language;
     final font = LanguageProvider.getFontFamily(lang);
 
-    final hasCaregiver = provider.caregiverName.isNotEmpty;
-    final caregiverName = hasCaregiver
-        ? provider.caregiverName
-        : _label('not_set', lang);
-    final caregiverPhone = provider.caregiverPhone.trim();
-    final caregiverRelation = provider.caregiverRelation.isEmpty
-        ? ''
-        : _prettyRelation(provider.caregiverRelation);
+    final caregivers = provider.caregivers;
+    final hasCaregiver = caregivers.isNotEmpty;
 
     return Scaffold(
       backgroundColor: AppTheme.background,
@@ -354,93 +334,151 @@ class _SosScreenState extends State<SosScreen>
                               fontWeight: FontWeight.w600),
                         ),
                         const SizedBox(height: 8),
-                        GestureDetector(
-                          onTap: provider.caregiverName.isEmpty
-                              ? () => context.go('${AppRoutes.caregiverSetup}?from=sos')
-                              : null,
-                          child: Container(
-                            padding: const EdgeInsets.all(14),
-                            decoration: BoxDecoration(
-                              color: AppTheme.card,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                  color: provider.caregiverName.isEmpty
-                                      ? AppTheme.error.withValues(alpha: 0.3)
-                                      : AppTheme.grey.withValues(alpha: 0.15)),
-                            ),
-                            child: Row(
-                              children: [
-                                Container(
-                                  width: 36, height: 36,
-                                  decoration: const BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    gradient: LinearGradient(colors: [
-                                      Color(0xFF7C3AED),
-                                      Color(0xFFA855F7)
-                                    ]),
-                                  ),
-                                  child: Center(
-                                    child: Text(
-                                      provider.caregiverName.isEmpty
-                                          ? '?'
-                                          : provider.caregiverName.characters
-                                              .first
-                                              .toUpperCase(),
-                                      style: const TextStyle(
-                                          color: AppTheme.white,
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 16),
-                                    ),
-                                  ),
+                        // Caregiver list
+                        if (hasCaregiver)
+                          ...caregivers.asMap().entries.map((entry) {
+                            final index = entry.key;
+                            final caregiver = entry.value;
+                            final name = caregiver['name'] ?? '';
+                            final phone = caregiver['phone'] ?? '';
+                            final relation = caregiver['relation'] ?? '';
+                            
+                            return Padding(
+                              padding: EdgeInsets.only(bottom: index < caregivers.length - 1 ? 8 : 0),
+                              child: Container(
+                                padding: const EdgeInsets.all(14),
+                                decoration: BoxDecoration(
+                                  color: AppTheme.card,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                      color: AppTheme.grey.withValues(alpha: 0.15)),
                                 ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(caregiverName,
-                                          style: TextStyle(
-                                              fontFamily: font,
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      width: 36, height: 36,
+                                      decoration: const BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        gradient: LinearGradient(colors: [
+                                          Color(0xFF7C3AED),
+                                          Color(0xFFA855F7)
+                                        ]),
+                                      ),
+                                      child: Center(
+                                        child: Text(
+                                          name.isEmpty
+                                              ? '?'
+                                              : name.characters.first.toUpperCase(),
+                                          style: const TextStyle(
                                               color: AppTheme.white,
-                                              fontWeight: FontWeight.w600,
-                                              fontSize: 14)),
-                                      if (caregiverRelation.isNotEmpty)
-                                        Padding(
-                                          padding:
-                                              const EdgeInsets.only(top: 2),
-                                          child: Text(
-                                            caregiverRelation,
-                                            style: TextStyle(
-                                              fontFamily: font,
-                                              fontSize: 11,
-                                              color: AppTheme.grey,
-                                            ),
-                                          ),
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 16),
                                         ),
-                                      if (caregiverPhone.isNotEmpty)
-                                        Padding(
-                                          padding:
-                                              const EdgeInsets.only(top: 4),
-                                          child: Text(caregiverPhone,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(name,
                                               style: TextStyle(
                                                   fontFamily: font,
-                                                  color: AppTheme.accent,
-                                                  fontSize: 13,
-                                                  fontWeight:
-                                                      FontWeight.w600)),
-                                        ),
-                                    ],
+                                                  color: AppTheme.white,
+                                                  fontWeight: FontWeight.w600,
+                                                  fontSize: 14)),
+                                          if (relation.isNotEmpty)
+                                            Padding(
+                                              padding:
+                                                  const EdgeInsets.only(top: 2),
+                                              child: Text(
+                                                _prettyRelation(relation),
+                                                style: TextStyle(
+                                                  fontFamily: font,
+                                                  fontSize: 11,
+                                                  color: AppTheme.grey,
+                                                ),
+                                              ),
+                                            ),
+                                          if (phone.isNotEmpty)
+                                            Padding(
+                                              padding:
+                                                  const EdgeInsets.only(top: 4),
+                                              child: Text(phone,
+                                                  style: TextStyle(
+                                                      fontFamily: font,
+                                                      color: AppTheme.accent,
+                                                      fontSize: 13,
+                                                      fontWeight:
+                                                          FontWeight.w600)),
+                                            ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          }).toList()
+                        else
+                          GestureDetector(
+                            onTap: () => context.go(AppRoutes.caregiversManage),
+                            child: Container(
+                              padding: const EdgeInsets.all(14),
+                              decoration: BoxDecoration(
+                                color: AppTheme.card,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                    color: AppTheme.error.withValues(alpha: 0.3)),
+                              ),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 36, height: 36,
+                                    decoration: const BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      gradient: LinearGradient(colors: [
+                                        Color(0xFF7C3AED),
+                                        Color(0xFFA855F7)
+                                      ]),
+                                    ),
+                                    child: const Center(
+                                      child: Text(
+                                        '?',
+                                        style: TextStyle(
+                                            color: AppTheme.white,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 16),
+                                      ),
+                                    ),
                                   ),
-                                ),
-                                GestureDetector(
-                                  onTap: () =>
-                                      context.go('${AppRoutes.caregiverSetup}?from=sos'),
-                                  child: const Icon(Icons.edit,
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Text(_label('not_set', lang),
+                                        style: TextStyle(
+                                            fontFamily: font,
+                                            color: AppTheme.white,
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 14)),
+                                  ),
+                                  const Icon(Icons.add,
                                       color: AppTheme.grey, size: 18),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
+                          ),
+                        const SizedBox(height: 12),
+                        GestureDetector(
+                          onTap: () => context.go(AppRoutes.caregiversManage),
+                          child: Center(
+                            child: LangText(
+                                caregivers.length < 3
+                                    ? '＋ ${_label('add_caregiver', lang)}'
+                                    : _label('manage', lang),
+                                lang,
+                                fontSize: 13,
+                                color: AppTheme.accent),
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -475,7 +513,7 @@ class _SosScreenState extends State<SosScreen>
                         ),
                         const SizedBox(height: 12),
                         GestureDetector(
-                          onTap: () => context.go('${AppRoutes.caregiverSetup}?from=sos'),
+                          onTap: () => context.go('${AppRoutes.caregiversManage}?from=sos'),
                           child: Center(
                             child: LangText(_label('manage', lang), lang,
                                 fontSize: 13, color: AppTheme.accent),

@@ -5,6 +5,7 @@ import 'package:medilens/core/theme.dart';
 import 'package:medilens/core/routes.dart';
 import 'package:medilens/core/lang_text.dart';
 import 'package:medilens/core/app_data.dart';
+import 'package:medilens/core/widgets/sos_fab.dart';
 import 'package:medilens/providers/language_provider.dart';
 
 class RemindersScreen extends StatefulWidget {
@@ -16,102 +17,39 @@ class RemindersScreen extends StatefulWidget {
 
 class _RemindersScreenState extends State<RemindersScreen> {
   final Map<String, Map<String, String>> _labels = {
-    'title': {
-      'en': '🔔 My Reminders',
-      'te': '🔔 నా రిమైండర్లు',
-      'hi': '🔔 मेरे रिमाइंडर',
-      'ta': '🔔 என் நினைவூட்டல்கள்'
-    },
-    'sub': {
-      'en': 'Never miss your medicine again',
-      'te': 'మీ మందు ఎప్పుడూ మిస్ చేయకండి',
-      'hi': 'अपनी दवा कभी न भूलें',
-      'ta': 'உங்கள் மருந்தை ஒருபோதும் தவறவிடாதீர்கள்'
-    },
-    'empty': {
-      'en': 'No reminders set yet.\nAdd a reminder to get started.',
-      'te':
-          'ఇంకా రిమైండర్లు సెట్ చేయలేదు.\nప్రారంభించడానికి రిమైండర్ జోడించండి.',
-      'hi': 'अभी कोई रिमाइंडर सेट नहीं।\nशुरू करने के लिए रिमाइंडर जोड़ें।',
-      'ta':
-          'இன்னும் நினைவூட்டல்கள் அமைக்கப்படவில்லை.\nதொடங்க நினைவூட்டல் சேர்க்கவும்.'
-    },
-    'add': {
-      'en': '+ Add Reminder',
-      'te': '+ రిమైండర్ జోడించు',
-      'hi': '+ रिमाइंडर जोड़ें',
-      'ta': '+ நினைவூட்டல் சேர்'
-    },
-    'medicine': {
-      'en': 'Medicine Name',
-      'te': 'మందు పేరు',
-      'hi': 'दवा का नाम',
-      'ta': 'மருந்தின் பெயர்'
-    },
+    'title': {'en': '🔔 My Reminders', 'te': '🔔 నా రిమైండర్లు', 'hi': '🔔 मेरे रिमाइंडर', 'ta': '🔔 என் நினைவூட்டல்கள்'},
+    'sub': {'en': 'Never miss your medicine again', 'te': 'మీ మందు ఎప్పుడూ మిస్ చేయకండి', 'hi': 'अपनी दवा कभी न भूलें', 'ta': 'உங்கள் மருந்தை ஒருபோதும் தவறவிடாதீர்கள்'},
+    'empty': {'en': 'No reminders set yet.\nAdd a reminder to get started.', 'te': 'ఇంకా రిమైండర్లు సెట్ చేయలేదు.\nప్రారంభించడానికి రిమైండర్ జోడించండి.', 'hi': 'अभी कोई रिमाइंडर सेट नहीं।\nशुरू करने के लिए रिमाइंडर जोड़ें।', 'ta': 'இன்னும் நினைவூட்டல்கள் அமைக்கப்படவில்லை.\nதொடங்க நினைவூட்டல் சேர்க்கவும்.'},
+    'add': {'en': '+ Add Reminder', 'te': '+ రిమైండర్ జోడించు', 'hi': '+ रिमाइंडर जोड़ें', 'ta': '+ நினைவூட்டல் சேர்'},
+    'medicine': {'en': 'Medicine Name', 'te': 'మందు పేరు', 'hi': 'दवा का नाम', 'ta': 'மருந்தின் பெயர்'},
     'time': {'en': 'Time', 'te': 'సమయం', 'hi': 'समय', 'ta': 'நேரம்'},
-    'frequency': {
-      'en': 'Frequency',
-      'te': 'పౌనఃపున్యం',
-      'hi': 'बारंबारता',
-      'ta': 'அடிக்கடி'
-    },
-    'save': {
-      'en': 'Save Reminder',
-      'te': 'రిమైండర్ సేవ్ చేయి',
-      'hi': 'रिमाइंडर सहेजें',
-      'ta': 'நினைவூட்டலை சேமி'
-    },
+    'frequency': {'en': 'Frequency', 'te': 'పౌనఃపున్యం', 'hi': 'बारंबारता', 'ta': 'அடிக்கடி'},
+    'save': {'en': 'Save Reminder', 'te': 'రిమైండర్ సేవ్ చేయి', 'hi': 'रिमाइंडर सहेजें', 'ta': 'நினைவூட்டலை சேமி'},
     'cancel': {'en': 'Cancel', 'te': 'రద్దు', 'hi': 'रद्द', 'ta': 'ரத்து'},
     'daily': {'en': 'Daily', 'te': 'రోజువారీ', 'hi': 'दैनिक', 'ta': 'தினசரி'},
-    'twice': {
-      'en': 'Twice Daily',
-      'te': 'రోజుకు రెండుసార్లు',
-      'hi': 'दिन में दो बार',
-      'ta': 'தினமும் இரண்டு முறை'
-    },
-    'weekly': {
-      'en': 'Weekly',
-      'te': 'వారానికి ఒకసారి',
-      'hi': 'साप्ताहिक',
-      'ta': 'வாரம் ஒரு முறை'
-    },
+    'twice': {'en': 'Twice Daily', 'te': 'రోజుకు రెండుసార్లు', 'hi': 'दिन में दो बार', 'ta': 'தினமும் இரண்டு முறை'},
+    'weekly': {'en': 'Weekly', 'te': 'వారానికి ఒకసారి', 'hi': 'साप्ताहिक', 'ta': 'வாரம் ஒரு முறை'},
     'delete': {'en': 'Delete', 'te': 'తొలగించు', 'hi': 'हटाएं', 'ta': 'நீக்கு'},
-    'total': {
-      'en': 'Total Reminders',
-      'te': 'మొత్తం రిమైండర్లు',
-      'hi': 'कुल रिमाइंडर',
-      'ta': 'மொத்த நினைவூட்டல்கள்'
-    },
-    'enter_name': {
-      'en': 'Enter medicine name',
-      'te': 'మందు పేరు నమోదు చేయండి',
-      'hi': 'दवा का नाम दर्ज करें',
-      'ta': 'மருந்தின் பெயரை உள்ளிடுங்கள்'
-    },
+    'total': {'en': 'Total Reminders', 'te': 'మొత్తం రిమైండర్లు', 'hi': 'कुल रिमाइंडर', 'ta': 'மொத்த நினைவூட்டல்கள்'},
+    'enter_name': {'en': 'Enter medicine name', 'te': 'మందు పేరు నమోదు చేయండి', 'hi': 'दवा का नाम दर्ज करें', 'ta': 'மருந்தின் பெயரை உள்ளிடுங்கள்'},
+    'taken': {'en': 'Taken', 'te': 'తీసుకున్నారు', 'hi': 'ले लिया', 'ta': 'எடுத்தது'},
+    'not_taken': {'en': 'Not taken', 'te': 'తీసుకోలేదు', 'hi': 'नहीं लिया', 'ta': 'எடுக்கவில்லை'},
+    'mark_taken': {'en': 'Mark as taken', 'te': 'తీసుకున్నట్లు గుర్తించు', 'hi': 'लिया हुआ चिह्नित करें', 'ta': 'எடுத்ததாக குறிக்கவும்'},
+    'today_taken': {'en': 'taken today', 'te': 'ఈరోజు తీసుకున్నారు', 'hi': 'आज लिया', 'ta': 'இன்று எடுத்தது'},
     'nav_home': {'en': 'Home', 'te': 'హోమ్', 'hi': 'होम', 'ta': 'முகப்பு'},
     'nav_scan': {'en': 'Scan', 'te': 'స్కాన్', 'hi': 'स्कैन', 'ta': 'ஸ்கேன்'},
-    'nav_cabinet': {
-      'en': 'Cabinet',
-      'te': 'పెట్టె',
-      'hi': 'कैबिनेट',
-      'ta': 'பெட்டி'
-    },
-    'nav_reminders': {
-      'en': 'Reminders',
-      'te': 'రిమైండర్లు',
-      'hi': 'रिमाइंडर',
-      'ta': 'நினைவூட்டல்'
-    },
-    'nav_settings': {
-      'en': 'Settings',
-      'te': 'సెట్టింగులు',
-      'hi': 'सेटिंग्स',
-      'ta': 'அமைப்புகள்'
-    },
+    'nav_cabinet': {'en': 'Cabinet', 'te': 'పెట్టె', 'hi': 'कैबिनेट', 'ta': 'பெட்டி'},
+    'nav_reminders': {'en': 'Reminders', 'te': 'రిమైండర్లు', 'hi': 'रिमाइंडर', 'ta': 'நினைவூட்டல்'},
+    'nav_settings': {'en': 'Settings', 'te': 'సెట్టింగులు', 'hi': 'सेटिंग्स', 'ta': 'அமைப்புகள்'},
   };
 
   String _label(String key, String lang) =>
       _labels[key]?[lang] ?? _labels[key]?['en'] ?? key;
+
+  String _getDayName(int weekday) {
+    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    return days[(weekday - 1) % 7];
+  }
 
   void _showAddDialog(BuildContext context, String lang, AppData appData) {
     final nameController = TextEditingController();
@@ -130,7 +68,6 @@ class _RemindersScreenState extends State<RemindersScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Medicine name
               LangText(_label('medicine', lang), lang,
                   fontSize: 12, color: AppTheme.grey),
               const SizedBox(height: 6),
@@ -138,8 +75,8 @@ class _RemindersScreenState extends State<RemindersScreen> {
                 decoration: BoxDecoration(
                   color: AppTheme.background,
                   borderRadius: BorderRadius.circular(8),
-                  border:
-                      Border.all(color: AppTheme.grey.withValues(alpha: 0.3)),
+                  border: Border.all(
+                      color: AppTheme.grey.withValues(alpha: 0.3)),
                 ),
                 child: TextField(
                   controller: nameController,
@@ -151,13 +88,12 @@ class _RemindersScreenState extends State<RemindersScreen> {
                     prefixIcon: const Icon(Icons.medication,
                         color: AppTheme.accent, size: 18),
                     border: InputBorder.none,
-                    contentPadding:
-                        const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+                    contentPadding: const EdgeInsets.symmetric(
+                        vertical: 10, horizontal: 8),
                   ),
                 ),
               ),
               const SizedBox(height: 12),
-              // Time picker
               LangText(_label('time', lang), lang,
                   fontSize: 12, color: AppTheme.grey),
               const SizedBox(height: 6),
@@ -203,7 +139,6 @@ class _RemindersScreenState extends State<RemindersScreen> {
                 ),
               ),
               const SizedBox(height: 12),
-              // Frequency
               LangText(_label('frequency', lang), lang,
                   fontSize: 12, color: AppTheme.grey),
               const SizedBox(height: 6),
@@ -214,9 +149,11 @@ class _RemindersScreenState extends State<RemindersScreen> {
                     child: Padding(
                       padding: const EdgeInsets.only(right: 4),
                       child: GestureDetector(
-                        onTap: () => setDialogState(() => selectedFreq = f),
+                        onTap: () =>
+                            setDialogState(() => selectedFreq = f),
                         child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          padding:
+                              const EdgeInsets.symmetric(vertical: 8),
                           decoration: BoxDecoration(
                             color: isSelected
                                 ? AppTheme.accent
@@ -225,7 +162,8 @@ class _RemindersScreenState extends State<RemindersScreen> {
                             border: Border.all(
                                 color: isSelected
                                     ? AppTheme.accent
-                                    : AppTheme.grey.withValues(alpha: 0.3)),
+                                    : AppTheme.grey
+                                        .withValues(alpha: 0.3)),
                           ),
                           child: Center(
                             child: LangText(_label(f, lang), lang,
@@ -252,15 +190,12 @@ class _RemindersScreenState extends State<RemindersScreen> {
             TextButton(
               onPressed: () {
                 if (nameController.text.trim().isEmpty) return;
-                appData.addReminder({
-                  'name': nameController.text.trim(),
-                  'time': selectedTime.format(ctx),
-                  'hour': selectedTime.hour,
-                  'minute': selectedTime.minute,
-                  'weekday': DateTime.now().weekday,
-                  'frequency': selectedFreq,
-                  'enabled': true,
-                });
+                appData.addReminder(ReminderEntry(
+                  medicineName: nameController.text.trim(),
+                  time: selectedTime.format(ctx),
+                  days: selectedFreq == 'daily' ? ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] : [_getDayName(DateTime.now().weekday)],
+                  takenToday: false,
+                ));
                 Navigator.pop(ctx);
               },
               child: LangText(_label('save', lang), lang,
@@ -281,23 +216,26 @@ class _RemindersScreenState extends State<RemindersScreen> {
     final appData = context.watch<AppData>();
     final reminders = appData.reminders;
 
+    final takenCount = reminders.where((r) => r.takenToday == true).length;
+
     return Scaffold(
       backgroundColor: AppTheme.background,
+      floatingActionButton: const SOSFab(),
       body: Stack(
         children: [
           SafeArea(
             child: Column(
               children: [
+                // Header
                 Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 14, vertical: 10),
                   child: Row(
                     children: [
                       GestureDetector(
                         onTap: () => context.go(AppRoutes.home),
                         child: Container(
-                          width: 30,
-                          height: 30,
+                          width: 30, height: 30,
                           decoration: BoxDecoration(
                             color: AppTheme.card,
                             borderRadius: BorderRadius.circular(8),
@@ -319,7 +257,8 @@ class _RemindersScreenState extends State<RemindersScreen> {
                         ),
                       ),
                       GestureDetector(
-                        onTap: () => _showAddDialog(context, lang, appData),
+                        onTap: () =>
+                            _showAddDialog(context, lang, appData),
                         child: Container(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 12, vertical: 6),
@@ -348,8 +287,7 @@ class _RemindersScreenState extends State<RemindersScreen> {
                     child: Row(
                       children: [
                         Container(
-                          width: 44,
-                          height: 44,
+                          width: 44, height: 44,
                           decoration: BoxDecoration(
                             color: AppTheme.teal.withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(12),
@@ -370,9 +308,39 @@ class _RemindersScreenState extends State<RemindersScreen> {
                                     fontWeight: FontWeight.bold)),
                           ],
                         ),
+                        const SizedBox(width: 16),
+                        // Taken today badge
+                        if (reminders.isNotEmpty)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: AppTheme.success.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                  color: AppTheme.success
+                                      .withValues(alpha: 0.3)),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.check_circle,
+                                    color: AppTheme.success, size: 14),
+                                const SizedBox(width: 4),
+                                Text('$takenCount/${reminders.length}',
+                                    style: const TextStyle(
+                                        color: AppTheme.success,
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.bold)),
+                                const SizedBox(width: 4),
+                                LangText(_label('today_taken', lang), lang,
+                                    fontSize: 11, color: AppTheme.success),
+                              ],
+                            ),
+                          ),
                         const Spacer(),
                         GestureDetector(
-                          onTap: () => _showAddDialog(context, lang, appData),
+                          onTap: () =>
+                              _showAddDialog(context, lang, appData),
                           child: Container(
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 14, vertical: 8),
@@ -387,7 +355,8 @@ class _RemindersScreenState extends State<RemindersScreen> {
                                     color: AppTheme.white, size: 16),
                                 const SizedBox(width: 4),
                                 LangText(_label('add', lang), lang,
-                                    fontSize: 12, fontWeight: FontWeight.bold),
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold),
                               ],
                             ),
                           ),
@@ -433,10 +402,10 @@ class _RemindersScreenState extends State<RemindersScreen> {
                           ),
                         )
                       : ListView.builder(
-                          padding: const EdgeInsets.symmetric(horizontal: 14),
+                          padding: const EdgeInsets.fromLTRB(14, 0, 14, 100),
                           itemCount: reminders.length,
-                          itemBuilder: (context, i) =>
-                              _reminderCard(reminders[i], i, lang, appData),
+                          itemBuilder: (context, i) => _reminderCard(
+                              reminders[i], i, lang, appData),
                         ),
                 ),
               ],
@@ -444,9 +413,7 @@ class _RemindersScreenState extends State<RemindersScreen> {
           ),
           // Bottom nav
           Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
+            bottom: 0, left: 0, right: 0,
             child: Container(
               height: 70,
               decoration: BoxDecoration(
@@ -462,12 +429,13 @@ class _RemindersScreenState extends State<RemindersScreen> {
                       () => context.go(AppRoutes.home), font),
                   _navItem(Icons.qr_code_scanner, _label('nav_scan', lang),
                       false, () => context.go(AppRoutes.scan), font),
-                  _navItem(Icons.medical_services, _label('nav_cabinet', lang),
-                      false, () => context.go(AppRoutes.cabinet), font),
+                  _navItem(Icons.medical_services,
+                      _label('nav_cabinet', lang), false,
+                      () => context.go(AppRoutes.cabinet), font),
                   _navItem(Icons.alarm, _label('nav_reminders', lang), true,
                       () => context.go(AppRoutes.reminders), font),
-                  _navItem(Icons.settings, _label('nav_settings', lang), false,
-                      () => context.go(AppRoutes.settings), font),
+                  _navItem(Icons.settings, _label('nav_settings', lang),
+                      false, () => context.go(AppRoutes.settings), font),
                 ],
               ),
             ),
@@ -477,44 +445,72 @@ class _RemindersScreenState extends State<RemindersScreen> {
     );
   }
 
-  Widget _reminderCard(
-      Map<String, dynamic> reminder, int index, String lang, AppData appData) {
+  Widget _reminderCard(ReminderEntry reminder, int index,
+      String lang, AppData appData) {
+    final isTaken = reminder.takenToday;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppTheme.card,
+        color: isTaken
+            ? AppTheme.success.withValues(alpha: 0.07)
+            : AppTheme.card,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppTheme.grey.withValues(alpha: 0.15)),
+        border: Border.all(
+          color: isTaken
+              ? AppTheme.success.withValues(alpha: 0.3)
+              : AppTheme.grey.withValues(alpha: 0.15),
+        ),
       ),
       child: Row(
         children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: AppTheme.teal.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(12),
+          // Taken checkbox
+          GestureDetector(
+            onTap: () => appData.toggleTaken(index),
+            child: Container(
+              width: 36, height: 36,
+              decoration: BoxDecoration(
+                color: isTaken
+                    ? AppTheme.success.withValues(alpha: 0.2)
+                    : AppTheme.background,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: isTaken ? AppTheme.success : AppTheme.grey.withValues(alpha: 0.4),
+                  width: 1.5,
+                ),
+              ),
+              child: isTaken
+                  ? const Icon(Icons.check, color: AppTheme.success, size: 20)
+                  : const Icon(Icons.medication_outlined,
+                      color: AppTheme.grey, size: 18),
             ),
-            child: const Icon(Icons.medication, color: AppTheme.teal, size: 26),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(reminder['name'] ?? '',
-                    style: const TextStyle(
-                        color: AppTheme.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 15)),
+                Text(
+                  reminder.medicineName,
+                  style: TextStyle(
+                    color: isTaken
+                        ? AppTheme.grey
+                        : AppTheme.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                    decoration: isTaken
+                        ? TextDecoration.lineThrough
+                        : TextDecoration.none,
+                  ),
+                ),
                 const SizedBox(height: 4),
                 Row(
                   children: [
                     const Icon(Icons.access_time,
                         color: AppTheme.accent, size: 14),
                     const SizedBox(width: 4),
-                    Text(reminder['time'] ?? '',
+                    Text(reminder.time,
                         style: const TextStyle(
                             color: AppTheme.accent,
                             fontSize: 13,
@@ -527,33 +523,24 @@ class _RemindersScreenState extends State<RemindersScreen> {
                         color: AppTheme.teal.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(4),
                       ),
-                      child: LangText(
-                          _label(reminder['frequency'] ?? 'daily', lang), lang,
-                          fontSize: 10, color: AppTheme.teal),
+                      child: Text(
+                          reminder.days.length == 7 ? 'Daily' : reminder.days.join(', '),
+                          style: const TextStyle(fontSize: 10, color: AppTheme.teal)),
                     ),
+                    if (isTaken) ...[
+                      const SizedBox(width: 6),
+                      LangText(_label('taken', lang), lang,
+                          fontSize: 10, color: AppTheme.success),
+                    ],
                   ],
                 ),
               ],
             ),
           ),
-          Column(
-            children: [
-              Switch(
-                value: reminder['enabled'] ?? true,
-                onChanged: (val) {
-                  final updated = Map<String, dynamic>.from(reminder);
-                  updated['enabled'] = val;
-                  appData.updateReminder(index, updated);
-                },
-                activeThumbColor: AppTheme.accent,
-                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              ),
-              GestureDetector(
-                onTap: () => appData.removeReminder(index),
-                child: const Icon(Icons.delete_outline,
-                    color: AppTheme.error, size: 20),
-              ),
-            ],
+          GestureDetector(
+            onTap: () => appData.removeReminder(index),
+            child: const Icon(Icons.delete_outline,
+                color: AppTheme.error, size: 20),
           ),
         ],
       ),
@@ -570,14 +557,16 @@ class _RemindersScreenState extends State<RemindersScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(icon,
-                color: isActive ? AppTheme.accent : AppTheme.grey, size: 26),
+                color: isActive ? AppTheme.accent : AppTheme.grey,
+                size: 26),
             const SizedBox(height: 4),
             Text(label,
                 style: TextStyle(
                   fontFamily: font,
                   color: isActive ? AppTheme.accent : AppTheme.grey,
                   fontSize: 11,
-                  fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+                  fontWeight:
+                      isActive ? FontWeight.w600 : FontWeight.normal,
                 )),
           ],
         ),

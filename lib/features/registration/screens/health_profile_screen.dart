@@ -162,7 +162,7 @@ class _HealthProfileScreenState extends State<HealthProfileScreen> {
 
     // Currently Health Profile doesn't persist this data, 
     // but we ensure it's valid if they chose to type it.
-    context.go(AppRoutes.caregiverSetup);
+    context.go(AppRoutes.caregiversManage);
   }
 
   @override
@@ -228,10 +228,11 @@ class _HealthProfileScreenState extends State<HealthProfileScreen> {
                             _selectedConditions.contains(c['key']);
                         return GestureDetector(
                           onTap: () => setState(() {
-                            if (isSelected)
+                            if (isSelected) {
                               _selectedConditions.remove(c['key']);
-                            else
+                            } else {
                               _selectedConditions.add(c['key'] as String);
+                            }
                           }),
                           child: Container(
                             padding: const EdgeInsets.symmetric(

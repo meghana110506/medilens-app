@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:medilens/core/theme.dart';
@@ -168,7 +168,7 @@ class _AccessibilityScreenState extends State<AccessibilityScreen> {
                       children: [
                         GestureDetector(
                           onTap: () => context
-                                .go('${AppRoutes.caregiverSetup}?from=accessibility'),
+                                .go('${AppRoutes.caregiversManage}?from=accessibility'),
                           child: Container(
                             width: 30,
                             height: 30,
@@ -280,7 +280,14 @@ class _AccessibilityScreenState extends State<AccessibilityScreen> {
                     ),
                     const SizedBox(height: 20),
                     GestureDetector(
-                      onTap: () => context.go(AppRoutes.allSet),
+                      onTap: () {
+                        // Save all settings
+                        final provider = context.read<LanguageProvider>();
+                        provider.setHighContrastMode(_highContrast);
+                        provider.setBilingualEnabled(_bilingualAudio);
+                        // Navigate
+                        context.go(AppRoutes.allSet);
+                      },
                       child: Container(
                         width: double.infinity,
                         padding: const EdgeInsets.symmetric(vertical: 14),
@@ -433,7 +440,7 @@ class _AccessibilityScreenState extends State<AccessibilityScreen> {
           Switch(
             value: value,
             onChanged: onChanged,
-            activeColor: AppTheme.accent,
+            activeThumbColor: AppTheme.accent,
           ),
         ],
       ),

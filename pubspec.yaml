@@ -27,18 +27,22 @@ dependencies:
   intl: ^0.20.2
   geolocator: ^14.0.2
   flutter_timezone: ^5.0.2
-  flutter_sms: ^2.3.1
+  flutter_sms: 3.0.1
   permission_handler: ^11.3.0
+  firebase_core: ^4.7.0
+  firebase_auth: ^6.4.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^3.0.0
+  flutter_launcher_icons: ^0.13.1
 
 flutter:
   uses-material-design: true
   assets:
     - assets/drugs.db
+    - assets/icon/logo.png
 
   fonts:
     - family: NotoSans
@@ -53,3 +57,10 @@ flutter:
     - family: NotoSansTamil
       fonts:
         - asset: assets/fonts/NotoSansTamil-Regular.ttf
+
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: "assets/icon/logo.png"
+  adaptive_icon_background: "#0A0F1E"
+  adaptive_icon_foreground: "assets/icon/logo.png"

@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:medilens/core/theme.dart';
 import 'package:medilens/core/routes.dart';
 import 'package:medilens/providers/language_provider.dart';
+import 'package:medilens/core/widgets/sos_fab.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -139,6 +140,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       backgroundColor: AppTheme.background,
+      floatingActionButton: const SOSFab(),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       body: Stack(
         children: [
           SafeArea(

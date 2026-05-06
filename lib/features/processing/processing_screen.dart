@@ -18,7 +18,6 @@ class ProcessingScreen extends StatefulWidget {
 class _ProcessingScreenState extends State<ProcessingScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _ctrl;
-  int _currentStep = 0;
   double _confidence = 0;
   Map<String, dynamic>? _medicineData;
 
@@ -82,12 +81,15 @@ class _ProcessingScreenState extends State<ProcessingScreen>
 
   Future<void> _processSteps() async {
     final scannedText = widget.scannedText ?? '';
+    final provider = context.read<LanguageProvider>();
+    final threshold = provider.confidenceThreshold;
 
     await _setStep(0, 'done', 400);
     await _setStep(1, 'done', 600);
 
     await _setStep(2, 'running', 200);
-    _confidence = scannedText.isNotEmpty ? 94 : 61;
+    // Simulate confidence based on text quality
+    _confidence = scannedText.isNotEmpty ? (scannedText.length > 20 ? 92 : 78) : 45;
     await _setStep(2, 'done', 600);
 
     await _setStep(3, 'running', 200);
@@ -103,6 +105,8 @@ class _ProcessingScreenState extends State<ProcessingScreen>
           final results = await db.searchDrug(word);
           if (results.isNotEmpty) {
             found = Map<String, dynamic>.from(results.first);
+            // Add confidence to the medicine data
+            found['confidence'] = _confidence.toInt();
             break;
           }
         }
@@ -127,7 +131,23 @@ class _ProcessingScreenState extends State<ProcessingScreen>
 
     await _setStep(5, 'done', 400);
 
-    await Future.delayed(const Duration(milliseconds: 500));
+    // Auto-proceed if confidence meets threshold
+    final lang = provider.language;
+    if (_confidence / 100 >= threshold) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(_label('auto_proceed', lang)),
+            backgroundColor: AppTheme.teal,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+      await Future.delayed(const Duration(milliseconds: 1500));
+    } else {
+      await Future.delayed(const Duration(milliseconds: 500));
+    }
+    
     if (mounted) {
       context.go(AppRoutes.medicineInfo, extra: _medicineData);
     }
@@ -137,7 +157,6 @@ class _ProcessingScreenState extends State<ProcessingScreen>
     if (!mounted) return;
     setState(() {
       _steps[index]['status'] = status;
-      _currentStep = index;
     });
     await Future.delayed(Duration(milliseconds: delayMs));
   }

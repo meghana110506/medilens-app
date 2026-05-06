@@ -1,6 +1,6 @@
 import 'dart:async';
-
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
@@ -17,13 +17,15 @@ import 'package:medilens/core/routes.dart';
 import 'package:medilens/providers/language_provider.dart';
 
 /// Local notifications: medicine reminders, daily expiry digest, per-medicine
-/// one-shots, and bilingual text. TTS runs when the user taps a notification.
+/// one-shots, and bilingual text. TTS runs when notification fires.
 class NotificationService {
   NotificationService._();
   static final NotificationService instance = NotificationService._();
 
   final FlutterLocalNotificationsPlugin _plugin =
       FlutterLocalNotificationsPlugin();
+  
+  static const _ttsChannel = MethodChannel('com.example.medilens/tts_notification');
 
   bool _initialized = false;
   bool _tzReady = false;
@@ -217,6 +219,18 @@ class NotificationService {
     ));
   }
 
+  /// Trigger native TTS to speak notification text immediately
+  static Future<void> speakNotification(String text, String languageCode) async {
+    try {
+      await _ttsChannel.invokeMethod('speak', {
+        'text': text,
+        'language': languageCode,
+      });
+    } catch (e) {
+      debugPrint('TTS notification speak error: $e');
+    }
+  }
+
   Future<void> _dispatchPayload(BuildContext context, String? payload) async {
     if (payload == null || payload.isEmpty) return;
     final parts = payload.split('|');
@@ -374,14 +388,9 @@ class NotificationService {
     return 'You have $n medicine${n == 1 ? '' : 's'} that need attention in MediLens.';
   }
 
-  TimeOfDay? _parseReminderTime(Map<String, dynamic> r) {
-    final h = r['hour'];
-    final m = r['minute'];
-    if (h is int && m is int) {
-      return TimeOfDay(hour: h.clamp(0, 23), minute: m.clamp(0, 59));
-    }
-    final s = r['time'] as String?;
-    if (s == null || s.trim().isEmpty) return null;
+  TimeOfDay? _parseReminderTime(ReminderEntry r) {
+    final s = r.time;
+    if (s.trim().isEmpty) return null;
     try {
       final dt = DateFormat.jm().parseLoose(s);
       return TimeOfDay(hour: dt.hour, minute: dt.minute);
@@ -395,10 +404,44 @@ class NotificationService {
     }
   }
 
-  int _weekdayFromReminder(Map<String, dynamic> r) {
-    final w = r['weekday'];
-    if (w is int && w >= 1 && w <= 7) return w;
-    return DateTime.monday;
+  String _frequencyFromReminder(ReminderEntry r) {
+    if (r.days.isEmpty) return 'daily';
+    if (r.days.length == 7) return 'daily';
+    if (r.days.length == 1) return 'weekly';
+    return 'daily';
+  }
+
+  DateTime? _parseExpiryDate(String expiryDateStr) {
+    try {
+      final patterns = [
+        RegExp(r'(\d{2})[\/\-](\d{4})'),
+        RegExp(r'(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)\s+(\d{4})', caseSensitive: false),
+      ];
+      for (final pattern in patterns) {
+        final match = pattern.firstMatch(expiryDateStr);
+        if (match != null) {
+          if (pattern.pattern.contains(r'\d{2}')) {
+            final month = int.tryParse(match.group(1)!);
+            final year = int.tryParse(match.group(2)!);
+            if (month != null && year != null) {
+              return DateTime(year, month, 1);
+            }
+          } else {
+            final monthStr = match.group(1)!.toUpperCase().substring(0, 3);
+            final year = int.tryParse(match.group(2)!);
+            final monthMap = {'JAN': 1, 'FEB': 2, 'MAR': 3, 'APR': 4, 'MAY': 5, 'JUN': 6, 'JUL': 7, 'AUG': 8, 'SEP': 9, 'OCT': 10, 'NOV': 11, 'DEC': 12};
+            final month = monthMap[monthStr];
+            if (month != null && year != null) {
+              return DateTime(year, month, 1);
+            }
+          }
+          break;
+        }
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
   }
 
   tz.TZDateTime _nextWallClock(int hour, int minute) {
@@ -567,8 +610,12 @@ class NotificationService {
       channelId,
       'MediLens alerts',
       channelDescription: 'Medicine reminders and expiry check-ins',
-      importance: Importance.high,
-      priority: Priority.high,
+      importance: Importance.max,
+      priority: Priority.max,
+      playSound: true,
+      enableVibration: true,
+      fullScreenIntent: true, // Shows notification even when screen is off
+      autoCancel: true,
     );
   }
 
@@ -596,14 +643,13 @@ class NotificationService {
       for (var i = 0; i < appData.reminders.length; i++) {
         if (slot >= _maxReminderSlots) break;
         final r = appData.reminders[i];
-        if ((r['enabled'] ?? true) == false) continue;
 
         final tod = _parseReminderTime(r);
         if (tod == null) continue;
 
-        final name = (r['name'] as String?)?.trim() ?? 'Medicine';
-        final freq = r['frequency'] as String? ?? 'daily';
+        final name = r.medicineName.trim();
         final payload = 'reminder|${Uri.encodeComponent(name)}';
+        final freq = _frequencyFromReminder(r);
 
         final details = NotificationDetails(
           android: _androidDetails('medilens_alerts'),
@@ -611,49 +657,18 @@ class NotificationService {
         );
 
         try {
-          if (freq == 'weekly') {
-            final wd = _weekdayFromReminder(r);
-            final when = _nextWeekdayOccurrence(wd, tod.hour, tod.minute);
-            await _plugin.zonedSchedule(
-              _reminderIdBase + slot * 2,
-              _reminderNotificationTitle(langProvider),
-              _reminderNotificationBody(name, langProvider),
-              when,
-              details,
-              androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-              uiLocalNotificationDateInterpretation: uiMode,
-              payload: payload,
-              matchDateTimeComponents: DateTimeComponents.dayOfWeekAndTime,
-            );
-          } else {
-            final when = _nextWallClock(tod.hour, tod.minute);
-            await _plugin.zonedSchedule(
-              _reminderIdBase + slot * 2,
-              _reminderNotificationTitle(langProvider),
-              _reminderNotificationBody(name, langProvider),
-              when,
-              details,
-              androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-              uiLocalNotificationDateInterpretation: uiMode,
-              payload: payload,
-              matchDateTimeComponents: DateTimeComponents.time,
-            );
-            if (freq == 'twice') {
-              final h2 = (tod.hour + 12) % 24;
-              final when2 = _nextWallClock(h2, tod.minute);
-              await _plugin.zonedSchedule(
-                _reminderIdBase + slot * 2 + 1,
-                _reminderNotificationTitle(langProvider),
-                _reminderNotificationBody(name, langProvider),
-                when2,
-                details,
-                androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-                uiLocalNotificationDateInterpretation: uiMode,
-                payload: payload,
-                matchDateTimeComponents: DateTimeComponents.time,
-              );
-            }
-          }
+          final when = _nextWallClock(tod.hour, tod.minute);
+          await _plugin.zonedSchedule(
+            _reminderIdBase + slot,
+            _reminderNotificationTitle(langProvider),
+            _reminderNotificationBody(name, langProvider),
+            when,
+            details,
+            androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+            uiLocalNotificationDateInterpretation: uiMode,
+            payload: payload,
+            matchDateTimeComponents: DateTimeComponents.time,
+          );
         } catch (e) {
           debugPrint('NotificationService: schedule reminder failed: $e');
         }
@@ -686,7 +701,7 @@ class NotificationService {
     final nowLocal = tz.TZDateTime.now(tz.local);
     for (var i = 0; i < appData.cabinet.length && i < _perMedicineSpan; i++) {
       final med = appData.cabinet[i];
-      final end = AppData.parseExpiryEndDate(med.expiryDate);
+      final end = _parseExpiryDate(med.expiryDate);
       if (end == null) continue;
 
       final name = med.name.trim().isEmpty ? 'Medicine' : med.name.trim();

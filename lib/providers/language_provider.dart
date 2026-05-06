@@ -8,6 +8,7 @@ class LanguageProvider extends ChangeNotifier {
   double _fontSize = AppConstants.fontMedium;
   double _voiceSpeed = AppConstants.voiceSpeedNormal;
   bool _bilingualEnabled = true;
+  bool _highContrastMode = false;
   String _userName = '';
   String _userAge = '60';
   String _userCity = '';
@@ -15,11 +16,13 @@ class LanguageProvider extends ChangeNotifier {
   String _userGender = 'Female';
   String _userPhone = '';
   String _userPhoto = '';
-  String _caregiverName = '';
-  String _caregiverPhone = '';
-  String _caregiverRelation = '';
+  
+  // Multiple caregivers support (up to 3)
+  List<Map<String, String>> _caregivers = [];
+  
   int _expiryDigestHour = 9;
   int _expiryDigestMinute = 0;
+  double _confidenceThreshold = 0.75; // Default 75%
   bool _remindersNotifEnabled = true;
   bool _expiryAlertsEnabled = true;
   bool _notificationPermissionRequested = false;
@@ -29,6 +32,7 @@ class LanguageProvider extends ChangeNotifier {
   double get fontSize => _fontSize;
   double get voiceSpeed => _voiceSpeed;
   bool get bilingualEnabled => _bilingualEnabled;
+  bool get highContrastMode => _highContrastMode;
   String get userName => _userName;
   String get userAge => _userAge;
   String get userCity => _userCity;
@@ -36,11 +40,18 @@ class LanguageProvider extends ChangeNotifier {
   String get userGender => _userGender;
   String get userPhone => _userPhone;
   String get userPhoto => _userPhoto;
-  String get caregiverName => _caregiverName;
-  String get caregiverPhone => _caregiverPhone;
-  String get caregiverRelation => _caregiverRelation;
+  
+  // Caregivers getters
+  List<Map<String, String>> get caregivers => List.unmodifiable(_caregivers);
+  
+  // Legacy getters for backward compatibility (returns first caregiver if exists)
+  String get caregiverName => _caregivers.isNotEmpty ? _caregivers[0]['name'] ?? '' : '';
+  String get caregiverPhone => _caregivers.isNotEmpty ? _caregivers[0]['phone'] ?? '' : '';
+  String get caregiverRelation => _caregivers.isNotEmpty ? _caregivers[0]['relation'] ?? '' : '';
+  
   int get expiryDigestHour => _expiryDigestHour;
   int get expiryDigestMinute => _expiryDigestMinute;
+  double get confidenceThreshold => _confidenceThreshold;
   bool get remindersNotifEnabled => _remindersNotifEnabled;
   bool get expiryAlertsEnabled => _expiryAlertsEnabled;
   bool get notificationPermissionRequested =>
@@ -88,6 +99,7 @@ class LanguageProvider extends ChangeNotifier {
       _fontSize = prefs.getDouble(AppConstants.keyFontSize) ?? AppConstants.fontMedium;
       _voiceSpeed = prefs.getDouble(AppConstants.keyVoiceSpeed) ?? AppConstants.voiceSpeedNormal;
       _bilingualEnabled = prefs.getBool(AppConstants.keyBilingualEnabled) ?? true;
+      _highContrastMode = prefs.getBool('high_contrast_mode') ?? false;
       _userName = prefs.getString('user_name') ?? '';
       _userAge = prefs.getString('user_age') ?? '60';
       _userCity = prefs.getString('user_city') ?? '';
@@ -95,13 +107,28 @@ class LanguageProvider extends ChangeNotifier {
       _userGender = prefs.getString('user_gender') ?? 'Female';
       _userPhone = prefs.getString('user_phone') ?? '';
       _userPhoto = prefs.getString('user_photo') ?? '';
-      _caregiverName = prefs.getString('caregiver_name') ?? '';
-      _caregiverPhone = prefs.getString('caregiver_phone') ?? '';
-      _caregiverRelation = prefs.getString('caregiver_relation') ?? '';
+      
+      // Load caregivers (up to 3)
+      _caregivers = [];
+      for (int i = 0; i < 3; i++) {
+        final name = prefs.getString('caregiver_${i}_name') ?? '';
+        final phone = prefs.getString('caregiver_${i}_phone') ?? '';
+        final relation = prefs.getString('caregiver_${i}_relation') ?? '';
+        if (name.isNotEmpty && phone.isNotEmpty) {
+          _caregivers.add({
+            'name': name,
+            'phone': phone,
+            'relation': relation,
+          });
+        }
+      }
+      
       _expiryDigestHour =
           prefs.getInt(AppConstants.keyExpiryDigestHour) ?? 9;
       _expiryDigestMinute =
           prefs.getInt(AppConstants.keyExpiryDigestMinute) ?? 0;
+      _confidenceThreshold =
+          prefs.getDouble('confidence_threshold') ?? 0.75;
       _remindersNotifEnabled =
           prefs.getBool(AppConstants.keyRemindersNotifEnabled) ?? true;
       _expiryAlertsEnabled =
@@ -151,18 +178,79 @@ class LanguageProvider extends ChangeNotifier {
     required String name,
     required String phone,
     required String relation,
+    int? index,
   }) async {
     try {
-      _caregiverName = name;
-      _caregiverPhone = phone;
-      _caregiverRelation = relation;
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('caregiver_name', name);
-      await prefs.setString('caregiver_phone', phone);
-      await prefs.setString('caregiver_relation', relation);
+      
+      // If index is provided, update that specific caregiver
+      if (index != null && index >= 0 && index < 3) {
+        if (index < _caregivers.length) {
+          _caregivers[index] = {
+            'name': name,
+            'phone': phone,
+            'relation': relation,
+          };
+        } else {
+          _caregivers.add({
+            'name': name,
+            'phone': phone,
+            'relation': relation,
+          });
+        }
+      } else {
+        // Add new caregiver if under limit
+        if (_caregivers.length < 3) {
+          _caregivers.add({
+            'name': name,
+            'phone': phone,
+            'relation': relation,
+          });
+        }
+      }
+      
+      // Save all caregivers to SharedPreferences
+      for (int i = 0; i < 3; i++) {
+        if (i < _caregivers.length) {
+          await prefs.setString('caregiver_${i}_name', _caregivers[i]['name'] ?? '');
+          await prefs.setString('caregiver_${i}_phone', _caregivers[i]['phone'] ?? '');
+          await prefs.setString('caregiver_${i}_relation', _caregivers[i]['relation'] ?? '');
+        } else {
+          await prefs.remove('caregiver_${i}_name');
+          await prefs.remove('caregiver_${i}_phone');
+          await prefs.remove('caregiver_${i}_relation');
+        }
+      }
+      
       notifyListeners();
     } catch (e) {
       debugPrint('Error saving caregiver: $e');
+    }
+  }
+
+  Future<void> removeCaregiver(int index) async {
+    try {
+      if (index >= 0 && index < _caregivers.length) {
+        _caregivers.removeAt(index);
+        
+        final prefs = await SharedPreferences.getInstance();
+        // Re-save all caregivers
+        for (int i = 0; i < 3; i++) {
+          if (i < _caregivers.length) {
+            await prefs.setString('caregiver_${i}_name', _caregivers[i]['name'] ?? '');
+            await prefs.setString('caregiver_${i}_phone', _caregivers[i]['phone'] ?? '');
+            await prefs.setString('caregiver_${i}_relation', _caregivers[i]['relation'] ?? '');
+          } else {
+            await prefs.remove('caregiver_${i}_name');
+            await prefs.remove('caregiver_${i}_phone');
+            await prefs.remove('caregiver_${i}_relation');
+          }
+        }
+        
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('Error removing caregiver: $e');
     }
   }
 
@@ -171,9 +259,19 @@ class LanguageProvider extends ChangeNotifier {
   Future<void> reloadCaregiverFromDisk() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      _caregiverName = prefs.getString('caregiver_name') ?? '';
-      _caregiverPhone = prefs.getString('caregiver_phone') ?? '';
-      _caregiverRelation = prefs.getString('caregiver_relation') ?? '';
+      _caregivers = [];
+      for (int i = 0; i < 3; i++) {
+        final name = prefs.getString('caregiver_${i}_name') ?? '';
+        final phone = prefs.getString('caregiver_${i}_phone') ?? '';
+        final relation = prefs.getString('caregiver_${i}_relation') ?? '';
+        if (name.isNotEmpty && phone.isNotEmpty) {
+          _caregivers.add({
+            'name': name,
+            'phone': phone,
+            'relation': relation,
+          });
+        }
+      }
       notifyListeners();
     } catch (e) {
       debugPrint('Error reloading caregiver: $e');
@@ -229,6 +327,17 @@ class LanguageProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> setConfidenceThreshold(double threshold) async {
+    try {
+      _confidenceThreshold = threshold.clamp(0.75, 1.0);
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setDouble('confidence_threshold', _confidenceThreshold);
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error saving confidence threshold: $e');
+    }
+  }
+
   Future<void> setRemindersNotifEnabled(bool enabled) async {
     try {
       _remindersNotifEnabled = enabled;
@@ -272,6 +381,17 @@ class LanguageProvider extends ChangeNotifier {
       notifyListeners();
     } catch (e) {
       debugPrint('Error setting bilingual: $e');
+    }
+  }
+
+  Future<void> setHighContrastMode(bool enabled) async {
+    try {
+      _highContrastMode = enabled;
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('high_contrast_mode', enabled);
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error setting high contrast: $e');
     }
   }
 

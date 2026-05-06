@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:medilens/core/theme.dart';
@@ -169,8 +169,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                                   fontSize: 14,
                                 )),
                             if (isSelected)
-                              Text('✓ Selected',
-                                  style: const TextStyle(
+                              const Text('✓ Selected',
+                                  style: TextStyle(
                                       color: AppTheme.accent, fontSize: 10)),
                           ],
                         ),
@@ -224,8 +224,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                 ),
               ),
               const SizedBox(height: 8),
-              Text('Step 1 of 5',
-                  style: const TextStyle(color: AppTheme.grey, fontSize: 12)),
+              const Text('Step 1 of 5',
+                  style: TextStyle(color: AppTheme.grey, fontSize: 12)),
               const SizedBox(height: 16),
             ],
           ),

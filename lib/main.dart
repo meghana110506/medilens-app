@@ -1,6 +1,8 @@
 ﻿import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 import 'package:provider/provider.dart';
 import 'package:medilens/core/routes.dart';
 import 'package:medilens/core/theme.dart';
@@ -10,6 +12,9 @@ import 'package:medilens/services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   await NotificationService.instance.init();
   runApp(const MediLensApp());
 }
@@ -95,7 +100,9 @@ class _MediLensRouterShell extends StatelessWidget {
         return MaterialApp.router(
           title: 'MediLens',
           debugShowCheckedModeBanner: false,
-          theme: AppTheme.darkTheme,
+          theme: provider.highContrastMode 
+              ? AppTheme.highContrastTheme 
+              : AppTheme.darkTheme,
           builder: (context, child) {
             return MediaQuery(
               data: MediaQuery.of(context).copyWith(

@@ -5,6 +5,7 @@ import 'package:medilens/core/theme.dart';
 import 'package:medilens/core/routes.dart';
 import 'package:medilens/core/lang_text.dart';
 import 'package:medilens/core/app_data.dart';
+import 'package:medilens/core/widgets/sos_fab.dart';
 import 'package:medilens/providers/language_provider.dart';
 
 class ExpiryTrackerScreen extends StatelessWidget {
@@ -39,6 +40,7 @@ class ExpiryTrackerScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: AppTheme.background,
+      floatingActionButton: const SOSFab(),
       body: Stack(
         children: [
           SafeArea(
@@ -192,7 +194,7 @@ class ExpiryTrackerScreen extends StatelessWidget {
                             ),
                           )
                         else
-                          ...medicines.map((m) => _medicineCard(m, lang)),
+                          ...medicines.map((m) => _medicineCard(m, lang, appData)),
                       ],
                     ),
                   ),
@@ -260,13 +262,13 @@ class ExpiryTrackerScreen extends StatelessWidget {
     );
   }
 
-  Widget _medicineCard(MedicineEntry medicine, String lang) {
+  Widget _medicineCard(MedicineEntry medicine, String lang, AppData appData) {
     final color = medicine.expiryStatus == 'valid'
         ? AppTheme.success
         : medicine.expiryStatus == 'expiring'
             ? AppTheme.warning
             : AppTheme.error;
-    final timeLeft = AppData.getTimeLeft(medicine.expiryDate);
+    final timeLeft = appData.getTimeLeft(medicine.expiryDate);
     final progress = medicine.expiryStatus == 'valid'
         ? 0.75
         : medicine.expiryStatus == 'expiring'

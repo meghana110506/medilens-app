@@ -1,9 +1,10 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:medilens/core/theme.dart';
 import 'package:medilens/core/routes.dart';
 import 'package:medilens/core/lang_text.dart';
+import 'package:medilens/core/widgets/sos_fab.dart';
 import 'package:medilens/providers/language_provider.dart';
 
 class InteractionCheckerScreen extends StatefulWidget {
@@ -176,13 +177,15 @@ class _InteractionCheckerScreenState extends State<InteractionCheckerScreen> {
         title: LangText(_label('title', lang), lang,
             fontSize: 16, fontWeight: FontWeight.bold),
       ),
-      body: SingleChildScrollView(
+      body: Stack(
+        children: [
+          SingleChildScrollView(
         padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            LangText(_label('subtitle', lang), lang,
-                fontSize: 13, color: AppTheme.grey),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                LangText(_label('subtitle', lang), lang,
+                    fontSize: 13, color: AppTheme.grey),
             const SizedBox(height: 16),
             Container(
               decoration: BoxDecoration(
@@ -239,10 +242,11 @@ class _InteractionCheckerScreenState extends State<InteractionCheckerScreen> {
                 final isSelected = _selectedMedicines.contains(m);
                 return GestureDetector(
                   onTap: () => setState(() {
-                    if (isSelected)
+                    if (isSelected) {
                       _selectedMedicines.remove(m);
-                    else
+                    } else {
                       _selectedMedicines.add(m);
+                    }
                   }),
                   child: Container(
                     padding:
@@ -296,11 +300,14 @@ class _InteractionCheckerScreenState extends State<InteractionCheckerScreen> {
               LangText(_label('results', lang), lang,
                   fontSize: 14, fontWeight: FontWeight.bold),
               const SizedBox(height: 12),
-              ..._results.map((r) => _resultCard(r, lang)),
-            ],
-          ],
-        ),
+                  ..._results.map((r) => _resultCard(r, lang)),
+                ],
+              ],
+            ),
+          ),
+        ],
       ),
+      floatingActionButton: const SOSFab(),
     );
   }
 
